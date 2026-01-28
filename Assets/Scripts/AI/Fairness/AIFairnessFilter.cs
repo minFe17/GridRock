@@ -3,14 +3,9 @@
 /// </summary>
 public static class AIFairnessFilter
 {
-    public static bool CanExecuteAction(
-        EAIActionTag actionTag,
-        AIActionCooldown actionCooldown,
-        AIPressureBudget pressureBudget,
-        float pressureCost
-    )
+    public static bool CanExecuteAction(EAIActionTag actionTag, AIActionCooldown actionCooldown, AIPressureBudget pressureBudget, float pressureCost, float currentTime)
     {
-        if (!actionCooldown.CanExecute(actionTag))
+        if (!actionCooldown.CanExecute(actionTag, currentTime))
             return false;
 
         if (!pressureBudget.CanApply(pressureCost))
