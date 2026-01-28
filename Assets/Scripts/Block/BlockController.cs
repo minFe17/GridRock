@@ -3,15 +3,13 @@ using UnityEngine;
 public class BlockController : MonoBehaviour
 {
     [SerializeField]
-    private GameObject _centerBlock;
+    private EBlockType _type;
 
-    public void RotationRight()
+    private BlockData _data;
+
+    private void Start()
     {
-        transform.Rotate(0f, 0f, 90f);
+        _data = DataManager.Instance.FindBlock(_type);
     }
-    public void RotationLeft() 
-    {
-        transform.Rotate(0f, 0f, -90f);
-    }
-    
+
 }

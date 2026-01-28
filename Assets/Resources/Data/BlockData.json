@@ -1,0 +1,67 @@
+[
+        {
+            "name" : "IBlock",
+            "type" : "I",
+            "index":[{"y" : 0, "x" : 3},
+            {"y" : 0, "x" : 2},
+            {"y" : 0, "x" : 1},
+            {"y" : 0, "x" : 0}],
+            "centerIndex" : {"y":0,"x":3}
+        },
+        {
+            "name" : "JBlock",
+            "type" : "J",
+            "index":[{"y" : 1, "x" : 0},
+            {"y" : 0, "x" : 0},
+            {"y" : 1, "x" : 1},
+            {"y" : 1, "x" : 2}],
+            "centerIndex" : {"y":1,"x":0}
+        },
+        {
+            "name" : "LBlock",
+            "type" : "L",
+            "index":[{"y" : 1, "x" : 0},
+            {"y" : 0, "x" : 2},
+            {"y" : 1, "x" : 1},
+            {"y" : 1, "x" : 2}],
+            "centerIndex" : {"y":1,"x":0}
+        },
+        {
+            "name" : "OBlock",
+            "type" : "O",
+            "index":[{"y" : 1, "x" : 0},
+            {"y" : 0, "x" : 0},
+            {"y" : 1, "x" : 1},
+            {"y" : 0, "x" : 1}],
+            "centerIndex" : {"y":1,"x":0}
+        },
+        {
+            "name" : "SBlock",
+            "type" : "S",
+            "index":[{"y" : 1, "x" : 0},
+            {"y" : 0, "x" : 1},
+            {"y" : 1, "x" : 1},
+            {"y" : 0, "x" : 2}],
+            "centerIndex" : {"y":1,"x":0}
+        },        
+        {
+            "name" : "TBlock",
+            "type" : "T",
+            "index":[{"y" : 1, "x" : 0},
+            {"y" : 0, "x" : 1},
+            {"y" : 1, "x" : 1},
+            {"y" : 1, "x" : 2}],
+            "centerIndex" : {"y":1,"x":0}
+        },
+        {
+            "name" : "ZBlock",
+            "type" : "Z",
+            "index":[{"y" : 1, "x" : 1},
+            {"y" : 0, "x" : 1},
+            {"y" : 1, "x" : 2},
+            {"y" : 0, "x" : 0}],
+            "centerIndex" : {"y":1,"x":1}
+        }
+        
+        
+]
