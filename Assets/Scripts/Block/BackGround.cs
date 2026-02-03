@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class BackGround : MonoBehaviour
 {
-    const float SPACE_NUM = 0.45f;
-    const int Y_LENGTH = 20;
-    const int X_LENGTH = 15;
+    const float SPACE_NUM = 0.5f;
+    const int Y_LENGTH = 18;
+    const int X_LENGTH = 13;
     
     private PoolingManager _poolingManager;
 
@@ -31,6 +31,7 @@ public class BackGround : MonoBehaviour
             {
                 GameObject obj = _poolingManager.Pop();
                 obj.transform.localPosition = new Vector3(x*SPACE_NUM,y*SPACE_NUM,0);
+                //행렬 반대로 계산해야됨
             }
             
         }

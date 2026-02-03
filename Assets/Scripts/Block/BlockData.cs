@@ -4,7 +4,6 @@ public struct BlockData
     public string name;
     public EBlockType type;
     public List<CellIndex> index;
-    public CellIndex centerIndex;
 }
 public enum EBlockType
 {
