@@ -16,6 +16,10 @@ public class BoardManager : MonoBehaviour
     private Vector2 _spawnPosition = new Vector2(0.76f, 3.9f);
     //이거 고민 좀 해봐야됨 블럭 전부 사라졌으면 다시 풀링에 집어넣는 방식으로갈지 등등
 
+    public List<BlockData> RandomBlocks
+    {
+        get { return _randomBlocks; }
+    }
     public void SelectBlock(int num)
     {
         //1,2,3 숫자 선택해서 함수 실행하시면 알아서 스폰하게 뺐습니다.
@@ -32,6 +36,7 @@ public class BoardManager : MonoBehaviour
 
         _randomBlocks.RemoveAt(index);
     }
+    
     private void Awake()
     {
         DataManager.Instance.LoadData();
