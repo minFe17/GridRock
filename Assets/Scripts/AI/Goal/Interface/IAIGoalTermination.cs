@@ -4,5 +4,5 @@
 /// </summary>
 public interface IAIGoalTermination
 {
-    bool ShouldTerminate(EAIGoalType goal, in PredictionResult prediction, in OutcomeEvaluation evaluation);
+    bool ShouldTerminate(EAIGoalType goal, in AISimulationState simulation);
 }

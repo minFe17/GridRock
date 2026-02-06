@@ -3,25 +3,25 @@
 /// </summary>
 public class DefaultGoalTermination : IAIGoalTermination
 {
-    public bool ShouldTerminate(EAIGoalType goal, in PredictionResult prediction, in OutcomeEvaluation evaluation)
+    public bool ShouldTerminate(EAIGoalType goal, in AISimulationState simulation)
     {
         switch (goal)
         {
             case EAIGoalType.KillNow:
                 // 실패했거나 더 이상 죽일 수 없음
-                return evaluation.SurvivalScore > 0f;
+                return simulation.SurvivalScore > 0f;
 
             case EAIGoalType.TrapPlayer:
                 // 이미 완전히 갇힘
-                return !prediction.HasEscapeRoute;
+                return !simulation.HasEscapeRoute;
 
             case EAIGoalType.ForceMistake:
-                // 충분히 위험 누적 → KillNow 가능
-                return evaluation.DangerScore >= 3.0f;
+                // 충분히 위험 누적 -> KillNow 가능
+                return simulation.DangerScore >= 3.0f;
 
             case EAIGoalType.ApplyPressure:
                 // 더 강한 목적 가능
-                return prediction.HasDanger || !prediction.HasEscapeRoute;
+                return simulation.HasDanger || !simulation.HasEscapeRoute;
         }
 
         return false;

@@ -5,17 +5,19 @@
 public class AIBrain
 {
     AIGoalState goalState;      // 현재 AI 목적과 락 정보
+    readonly IAIGoalDecider goalDecider;
     readonly IAIGoalTermination termination;
 
-    public AIBrain(IAIGoalTermination termination)
+    public AIBrain(IAIGoalDecider goalDecider, IAIGoalTermination termination)
     {
+        this.goalDecider = goalDecider;
         this.termination = termination;
         goalState = new AIGoalState(EAIGoalType.None, 0f);
     }
 
     public EAIGoalType CurrentGoal => goalState.CurrentGoal;
 
-    public void Update(float deltaTime, in PredictionResult prediction, in OutcomeEvaluation evaluation)
+    public void Update(float deltaTime, in AISimulationState simulation)
     {
         // 목적 락 유지
         if (goalState.LockTimer > 0f)
@@ -25,11 +27,13 @@ public class AIBrain
         }
 
         // 목적 종료 조건 검사
-        if (termination.ShouldTerminate(goalState.CurrentGoal, prediction, evaluation))
+        if (termination.ShouldTerminate(goalState.CurrentGoal, simulation))
+        {
             goalState = new AIGoalState(EAIGoalType.None, 0f);
+        }
 
         // 새 목적 선택
-        EAIGoalType nextGoal = AIGoalSelector.SelectGoal(prediction, evaluation);
+        EAIGoalType nextGoal = goalDecider.DecideGoal(simulation);
 
         float lockTime = AIGoalLockTime.GetLockTime(nextGoal);
 
