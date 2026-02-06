@@ -3,5 +3,5 @@
 /// </summary>
 public interface IAIFairnessFilter
 {
-    bool CanExecuteAction(EAIActionTag actionTag, float currentTime, float pressureCost);
+    bool CanExecuteAction(EAIActionTag actionTag, float pressureCost);
 }
