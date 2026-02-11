@@ -6,16 +6,16 @@ using System.Collections.Generic;
 /// </summary>
 public class AIActionCooldown
 {
-    private readonly Dictionary<EAIActionTag, float> lastExecuteTime; // 마지막 실행 시각
-    private readonly Dictionary<EAIActionTag, float> cooldowns;       // 액션별 쿨타임
+    private readonly Dictionary<EAIActionTagType, float> lastExecuteTime; // 마지막 실행 시각
+    private readonly Dictionary<EAIActionTagType, float> cooldowns;       // 액션별 쿨타임
 
-    public AIActionCooldown(Dictionary<EAIActionTag, float> cooldowns)
+    public AIActionCooldown(Dictionary<EAIActionTagType, float> cooldowns)
     {
         this.cooldowns = cooldowns;
-        lastExecuteTime = new Dictionary<EAIActionTag, float>();
+        lastExecuteTime = new Dictionary<EAIActionTagType, float>();
     }
 
-    public bool CanExecute(EAIActionTag tag, float currentTime)
+    public bool CanExecute(EAIActionTagType tag, float currentTime)
     {
         if (!lastExecuteTime.TryGetValue(tag, out float lastTime))
             return true;
@@ -23,7 +23,7 @@ public class AIActionCooldown
         return currentTime - lastTime >= cooldowns[tag];
     }
 
-    public void MarkExecuted(EAIActionTag tag, float currentTime)
+    public void MarkExecuted(EAIActionTagType tag, float currentTime)
     {
         lastExecuteTime[tag] = currentTime;
     }

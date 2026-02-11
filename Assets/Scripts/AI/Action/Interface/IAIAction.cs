@@ -3,7 +3,7 @@
 /// </summary>
 public interface IAIAction
 {
-    EAIActionTag ActionTag { get; }
+    EAIActionTagType ActionTag { get; }
 
     bool CanExecute(in AISimulationState sim);
     void Execute(in AIActionContext context);

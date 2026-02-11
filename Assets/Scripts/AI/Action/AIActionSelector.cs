@@ -13,7 +13,7 @@ public class AIActionSelector
                 continue;
 
             // 방해 Action인데 지금 타이밍이 아님
-            if (!allowInterfere && action.ActionTag != EAIActionTag.ApplyPressure)
+            if (!allowInterfere && action.ActionTag != EAIActionTagType.ApplyPressure)
                 continue;
 
             if (action.CanExecute(sim))

@@ -7,17 +7,17 @@ using UnityEngine;
 /// </summary>
 public class AIActionPriorityTable
 {
-    private readonly Dictionary<EAIActionTag, float> _priorities = new();
+    private readonly Dictionary<EAIActionTagType, float> _priorities = new();
 
-    public AIActionPriorityTable(IEnumerable<EAIActionTag> tags)
+    public AIActionPriorityTable(IEnumerable<EAIActionTagType> tags)
     {
         foreach (var tag in tags)
             _priorities[tag] = 1.0f;
     }
 
-    public float GetPriorities(EAIActionTag tag) => _priorities[tag];
+    public float GetPriorities(EAIActionTagType tag) => _priorities[tag];
 
-    public void Adjust(EAIActionTag tag, float delta)
+    public void Adjust(EAIActionTagType tag, float delta)
     {
         _priorities[tag] = Mathf.Clamp(_priorities[tag] + delta, 0.1f, 5.0f);
     }

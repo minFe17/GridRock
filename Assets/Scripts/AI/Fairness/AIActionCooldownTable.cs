@@ -6,16 +6,16 @@ using System.Collections.Generic;
 /// </summary>
 public sealed class AIActionCooldownTable
 {
-    private readonly Dictionary<EAIActionTag, float> cooldowns;   // 태그별 쿨타임
-    private readonly Dictionary<EAIActionTag, float> lastUseTime; // 태그별 마지막 사용 시각
+    private readonly Dictionary<EAIActionTagType, float> cooldowns;   // 태그별 쿨타임
+    private readonly Dictionary<EAIActionTagType, float> lastUseTime; // 태그별 마지막 사용 시각
 
-    public AIActionCooldownTable(Dictionary<EAIActionTag, float> cooldownConfig)
+    public AIActionCooldownTable(Dictionary<EAIActionTagType, float> cooldownConfig)
     {
         cooldowns = cooldownConfig;
-        lastUseTime = new Dictionary<EAIActionTag, float>();
+        lastUseTime = new Dictionary<EAIActionTagType, float>();
     }
 
-    public bool CanUse(EAIActionTag tag, float currentTime)
+    public bool CanUse(EAIActionTagType tag, float currentTime)
     {
         if (!cooldowns.TryGetValue(tag, out float cd))
             return true;
@@ -26,7 +26,7 @@ public sealed class AIActionCooldownTable
         return currentTime - last >= cd;
     }
 
-    public void MarkUsed(EAIActionTag tag, float currentTime)
+    public void MarkUsed(EAIActionTagType tag, float currentTime)
     {
         lastUseTime[tag] = currentTime;
     }

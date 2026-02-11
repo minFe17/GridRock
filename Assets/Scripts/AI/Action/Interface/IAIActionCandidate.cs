@@ -3,6 +3,6 @@
 /// </summary>
 public interface IAIActionCandidate
 {
-    EAIActionTag ActionTag { get; }   // 이 선택지가 유발하는 AI 행동 의미
+    EAIActionTagType ActionTag { get; }   // 이 선택지가 유발하는 AI 행동 의미
     float PressureCost { get; }       // 페어니스용 압박 비용
 }

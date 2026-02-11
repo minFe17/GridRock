@@ -11,7 +11,12 @@ public class DefaultAIFairnessFilter : IAIFairnessFilter
         this.pressureBudget = pressureBudget;
     }
 
-    bool IAIFairnessFilter.CanExecuteAction(EAIActionTag actionTag, float pressureCost)
+    bool IAIFairnessFilter.CanApply(IAIActionCandidate action)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    bool IAIFairnessFilter.CanExecuteAction(EAIActionTagType actionTag, float pressureCost)
     {
         return pressureBudget.CanApply(pressureCost);
     }
