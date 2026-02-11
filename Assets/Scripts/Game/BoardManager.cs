@@ -20,6 +20,10 @@ public class BoardManager : MonoBehaviour
     {
         get { return _randomBlocks; }
     }
+    public BlockController DropBlock
+    {
+        get { return _dropBlock; }
+    }
     public void SelectBlock(int num)
     {
         //1,2,3 숫자 선택해서 함수 실행하시면 알아서 스폰하게 뺐습니다.
