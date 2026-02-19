@@ -19,9 +19,15 @@ public class PlayerAnimationController : MonoBehaviour
     {
         _animator.SetTrigger("Jump");
     }
-    public void StartWalk(bool isLeft = false)
+    public void Flip(bool isLeft = false)
     {
-        Flip(isLeft);
+        if (!isLeft)
+            transform.localScale = new Vector3(1, 1, 1);
+        else
+            transform.localScale = new Vector3(-1, 1, 1);
+    }
+    public void StartWalk()
+    {
         if (_animator.GetBool("IsWalk")) return;
         _animator.SetBool("IsWalk", true);
     }
@@ -29,6 +35,10 @@ public class PlayerAnimationController : MonoBehaviour
     {
         if (!_animator.GetBool("IsWalk")) return;
         _animator.SetBool("IsWalk", false);
+    }
+    public void Stun()
+    {
+        //Ω∫≈œ √≥∏Æ«ÿ¡‡æﬂµ 
     }
     private void Start()
     {
@@ -38,11 +48,5 @@ public class PlayerAnimationController : MonoBehaviour
     {
         
     }
-    private void Flip(bool isLeft)
-    {
-        if (!isLeft)
-            transform.localScale = new Vector3(1, 1, 1);
-        else 
-            transform.localScale = new Vector3(-1, 1, 1);
-    }
+
 }
