@@ -3,7 +3,9 @@
 /// </summary>
 public sealed class InstantKillActionCandidate : IAIActionCandidate
 {
-    public EAIActionTagType ActionTag => EAIActionTagType.InstantKill;
+    EAIActionTagType IAIActionCandidate.ActionTag => EAIActionTagType.InstantKill;
 
-    public float PressureCost => 2.5f;
+    float IAIActionCandidate.PressureCost => 2.5f;
+
+    IAIAction IAIActionCandidate.Action => throw new System.NotImplementedException();
 }

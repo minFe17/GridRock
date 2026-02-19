@@ -3,7 +3,9 @@
 /// </summary>
 public sealed class ApplyPressureActionCandidate : IAIActionCandidate
 {
-    public EAIActionTagType ActionTag => EAIActionTagType.ApplyPressure;
+    EAIActionTagType IAIActionCandidate.ActionTag => EAIActionTagType.ApplyPressure;
 
-    public float PressureCost => 0.8f;
+    float IAIActionCandidate.PressureCost => 0.8f;
+
+    IAIAction IAIActionCandidate.Action => throw new System.NotImplementedException();
 }

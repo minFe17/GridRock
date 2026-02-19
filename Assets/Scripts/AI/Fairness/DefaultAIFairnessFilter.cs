@@ -13,11 +13,6 @@ public class DefaultAIFairnessFilter : IAIFairnessFilter
 
     bool IAIFairnessFilter.CanApply(IAIActionCandidate action)
     {
-        throw new System.NotImplementedException();
-    }
-
-    bool IAIFairnessFilter.CanExecuteAction(EAIActionTagType actionTag, float pressureCost)
-    {
-        return pressureBudget.CanApply(pressureCost);
+        return pressureBudget.CanApply(action.PressureCost);
     }
 }

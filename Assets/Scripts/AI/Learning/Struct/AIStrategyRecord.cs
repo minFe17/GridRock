@@ -7,10 +7,7 @@ public readonly struct AIStrategyRecord
     public readonly bool Success;
     public readonly float TotalScore;
 
-    public AIStrategyRecord(
-        EAIGoalType goal,
-        bool success,
-        float totalScore)
+    public AIStrategyRecord(EAIGoalType goal, bool success, float totalScore)
     {
         Goal = goal;
         Success = success;

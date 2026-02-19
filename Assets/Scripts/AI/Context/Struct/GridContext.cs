@@ -10,7 +10,6 @@ public readonly struct GridContext
     public readonly float EnclosureRate;        // 봉쇄도 (0~1)
     public readonly bool JumpRouteAvailable;    // 점프 후 위쪽으로 이동해 탈출 가능한 경로가 있는가
 
-
     public GridContext(int width, int height, bool[,] occupied, int[,] heightMap, int exitCount, float enclosureRate, bool jumpRouteAvailable)
     {
         Width = width;

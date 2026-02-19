@@ -2,24 +2,53 @@ using System.Collections.Generic;
 
 public class AIActionSelector
 {
-    public IAIAction Select(IReadOnlyList<IAIAction> actions, EAIGoalType goal, in AISimulationState sim, in AIInterferenceTriggerState trigger)
+    readonly IAIFairnessFilter _fairnessFilter;
+
+    public AIActionSelector(IAIFairnessFilter fairnessFilter)
+    {
+        _fairnessFilter = fairnessFilter;
+    }
+
+    public IAIActionCandidate Select(IReadOnlyList<IAIActionCandidate> candidates, EAIGoalType goal, in AISimulationState simulationState, in AIInterferenceTriggerState trigger)
     {
         bool allowInterfere = AIInterferencePolicy.CanInterfere(goal, trigger);
 
-        foreach (IAIAction action in actions)
+        IAIActionCandidate best = null;
+        float bestScore = float.MinValue;
+
+        foreach (IAIActionCandidate candidate in candidates)
         {
-            // 목적 기반 Action 허용 여부
-            if (!AIGoalActionPolicy.IsAllowed(goal, action.ActionTag))
+            if (!AIGoalActionPolicy.IsAllowed(goal, candidate.ActionTag))
                 continue;
 
-            // 방해 Action인데 지금 타이밍이 아님
-            if (!allowInterfere && action.ActionTag != EAIActionTagType.ApplyPressure)
+            if (!allowInterfere && candidate.ActionTag == EAIActionTagType.ApplyPressure)
                 continue;
 
-            if (action.CanExecute(sim))
-                return action;
+            if (!_fairnessFilter.CanApply(candidate))
+                continue;
+
+            if (!candidate.Action.CanExecute(simulationState))
+                continue;
+
+            float score = Evaluate(candidate, goal, trigger);
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = candidate;
+            }
         }
 
-        return null;
+        return best;
+    }
+
+    private float Evaluate(IAIActionCandidate candidate, EAIGoalType goal, in AIInterferenceTriggerState trigger)
+    {
+        float score = 0f;
+
+        // 기본 전략 가중치
+        score -= candidate.PressureCost;
+
+        return score;
     }
 }

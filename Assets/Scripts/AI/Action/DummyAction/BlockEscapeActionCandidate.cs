@@ -3,7 +3,9 @@
 /// </summary>
 public sealed class BlockEscapeActionCandidate : IAIActionCandidate
 {
-    public EAIActionTagType ActionTag => EAIActionTagType.BlockEscape;
+    EAIActionTagType IAIActionCandidate.ActionTag => EAIActionTagType.BlockEscape;
 
-    public float PressureCost => 1.0f;
+    float IAIActionCandidate.PressureCost => 1.0f;
+
+    IAIAction IAIActionCandidate.Action => throw new System.NotImplementedException();
 }
