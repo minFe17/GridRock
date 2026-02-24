@@ -20,11 +20,11 @@ public class PlayerController : MonoBehaviour
     }
     void Start()
     {
-        _animationController = GetComponent<PlayerAnimationController>();
+        _animationController = GetComponentInChildren<PlayerAnimationController>();
     }
     void Update()
     {
-
+        Move();
     }
 
     private void Move()
@@ -45,16 +45,19 @@ public class PlayerController : MonoBehaviour
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             //_isGround = false;
-            _status = EPlayerStatus.Jump;
-            _animationController.Jump();
+            //_status = EPlayerStatus.Jump;
+            //_animationController.Jump();
+            Jump();
         }
         if (Keyboard.current.dKey.isPressed && _isGround)
         {
-
+            Right();
+            Walk();
         }
         else if (Keyboard.current.aKey.isPressed && _isGround)
         {
-
+            Left();
+            Walk();
         }
         else
         {

@@ -17,7 +17,7 @@ public class PlayerAnimationController : MonoBehaviour
     }
     public void Jump()
     {
-        _animator.SetTrigger("Jump");
+        //_animator.SetTrigger("Jump");
     }
     public void Flip(bool isLeft = false)
     {
