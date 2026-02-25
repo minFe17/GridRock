@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 
 /// <summary>
 /// AI 판단에 필요한 모든 정보를 묶은 최상위 컨텍스트
@@ -7,14 +8,16 @@ public readonly struct AIContext
 {
     public readonly PlayerContext Player;
     public readonly GridContext Grid;
-    public readonly BlockContext Block;
+    public readonly IReadOnlyList<BlockOptionContext> AvailableBlocks;
+    public readonly BlockContext? ActiveBlock;
     public readonly AIStateContext AIState;
 
-    public AIContext(PlayerContext player, GridContext grid, BlockContext block, AIStateContext aIState)
+    public AIContext(PlayerContext player, GridContext grid, IReadOnlyList<BlockOptionContext> availableBlocks, BlockContext? activeBlock, AIStateContext aIState)
     {
         Player = player;
         Grid = grid;
-        Block = block;
+        AvailableBlocks = availableBlocks;
+        ActiveBlock = activeBlock;
         AIState = aIState;
     }
 }

@@ -1,15 +1,26 @@
-using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// 현재 게임 월드 상태를 수집하여 AI가 판단에 사용할 AIContext를 생성하는 역할
 /// </summary>
-public class AIContextBuilder : MonoBehaviour
+public class AIContextBuilder
 {
     // 싱글턴
 
-    public AIContext BuildContext()
+    PlayerContext _player;
+    GridContext _grid;
+    IReadOnlyList<BlockOptionContext> _availableBlocks;
+    BlockContext? _activeBlock;
+    AIStateContext _aiState;
+
+    public PlayerContext PlayerContext { set { _player = value; } }
+    public GridContext GridContext { set { _grid = value; } }
+    public IReadOnlyList<BlockOptionContext> AvailableBlocks { set { _availableBlocks = value; } }
+    public BlockContext BlockContext { set { _activeBlock = value; } }
+    public AIStateContext AIStateContext { set { _aiState = value; } }
+
+    public AIContext Build()
     {
-        // PlayerContext, GridContext, BlockContext, AIStateContext를 여기서 수집해서 반환
-        return default;
+        return new AIContext(_player, _grid, _availableBlocks, _activeBlock, _aiState);
     }
 }
