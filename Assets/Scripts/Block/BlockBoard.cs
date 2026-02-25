@@ -21,7 +21,7 @@ public class BlockBoard : MonoBehaviour
         Dictionary<int, int> blockTops = new Dictionary<int, int>();
         foreach (var index in data.index)
         {
-            int xIndex = (int)((position.x - 0.76f) / 0.5f) + index.x;
+            int xIndex = (int)((position.x ) / 0.5f) + index.x;
             int yIndex = 17;
             for (int y = 0; y <18; y++)
             {
@@ -70,7 +70,7 @@ public class BlockBoard : MonoBehaviour
         }
         else
         {
-            int xIndex = (int)((position.x - 0.76f) / 0.5f);
+            int xIndex = (int)((position.x ) / 0.5f);
             bool isHit = false;
             //데이터 기반으로 체크해주면됨.
             foreach (CellIndex index in data.index)
@@ -94,7 +94,7 @@ public class BlockBoard : MonoBehaviour
     }//사용안함
     public void AddIndex(BlockData data, Vector3 position)
     {
-        int xIndex = (int)((position.x - 0.76f) / 0.5f);
+        int xIndex = (int)((position.x ) / 0.5f);
         int yIndex = (int)(Mathf.Abs(position.y - 2.9f) / 0.5f);
         // +1안하면 보드 배열이 안맞고, 하면 위에 블록이 씹힌다. 왜????
         foreach (CellIndex index in data.index)

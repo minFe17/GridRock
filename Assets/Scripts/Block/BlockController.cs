@@ -22,7 +22,7 @@ public class BlockController : MonoBehaviour
 
     public void MoveRight()
     {
-        int xIndex = (int)((transform.localPosition.x - 0.76f) / 0.5f);
+        int xIndex = (int)((transform.localPosition.x ) / 0.5f);
         foreach (CellIndex index in _data.index)
         {
             if (xIndex + index.x >= X_SIZE) return;
@@ -33,7 +33,7 @@ public class BlockController : MonoBehaviour
     }
     public void MoveLeft()
     {
-        int xIndex = (int)((transform.localPosition.x - 0.76f) / 0.5f);
+        int xIndex = (int)((transform.localPosition.x ) / 0.5f);
         foreach (CellIndex index in _data.index)
         {
             if (xIndex + index.x <= 0) return;
@@ -89,10 +89,14 @@ public class BlockController : MonoBehaviour
         if(_data.index == null)
             _data = DataManager.Instance.FindBlock(_type);
         _blockTops = _board.CheckBoard(_data, transform.localPosition);
+
+        ChangeLayer("DropBlock");
     }
     public void StopDrop()
     {
         _isDrop = false;
+
+        ChangeLayer("Ground");
     }
     private void Update()
     {
@@ -125,7 +129,7 @@ public class BlockController : MonoBehaviour
 
         foreach (var index in _data.index)
         {
-            int xIndex = (int)((transform.localPosition.x - 0.76f) / 0.5f) + index.x;
+            int xIndex = (int)((transform.localPosition.x ) / 0.5f) + index.x;
             int yIndex = (int)(Mathf.Abs(_preY-2.9f)/0.5f)+index.y + 1; //블럭 보정값
             //Debug.Log(yIndex);
             if (_blockTops[xIndex] == yIndex)
@@ -135,6 +139,17 @@ public class BlockController : MonoBehaviour
                 return;
             }
         }
+    }
+
+    private void ChangeLayer(string layer)
+    {
+        Transform[] children = GetComponentsInChildren<Transform>();
+        int layerNumber = LayerMask.NameToLayer(layer);
+        foreach (Transform child in children)
+        {
+            child.gameObject.layer = layerNumber;
+        }
+        gameObject.layer = layerNumber;
     }
 
 

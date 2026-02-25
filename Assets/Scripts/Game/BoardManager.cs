@@ -13,7 +13,7 @@ public class BoardManager : MonoBehaviour
     private bool _isDrop = false;
     
 
-    private Vector2 _spawnPosition = new Vector2(0.76f, 3.9f);
+    private Vector2 _spawnPosition = new Vector2(0, 3.9f);
     //이거 고민 좀 해봐야됨 블럭 전부 사라졌으면 다시 풀링에 집어넣는 방식으로갈지 등등
 
     public List<BlockData> RandomBlocks

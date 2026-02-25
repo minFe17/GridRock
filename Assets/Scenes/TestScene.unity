@@ -251,6 +251,7 @@ GameObject:
   m_Component:
   - component: {fileID: 424240896}
   - component: {fileID: 424240897}
+  - component: {fileID: 424240898}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -287,6 +288,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 893b190da973ead47811127e9f29158f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _groundLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  _groundCheckDistance: 0.2
+--- !u!50 &424240898
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 424240895}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 1
+  m_Constraints: 4
 --- !u!1 &657332438
 GameObject:
   m_ObjectHideFlags: 0
@@ -349,7 +381,7 @@ CircleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -366,6 +398,10 @@ PrefabInstance:
     - target: {fileID: 3138972560178917012, guid: 9576a8db9dfbbb2419c481eafe151c13, type: 3}
       propertyPath: m_Name
       value: BackGround
+      objectReference: {fileID: 0}
+    - target: {fileID: 3138972560178917012, guid: 9576a8db9dfbbb2419c481eafe151c13, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8613284599114333813, guid: 9576a8db9dfbbb2419c481eafe151c13, type: 3}
       propertyPath: m_LocalPosition.x
@@ -616,7 +652,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: fd98284937ad9a848bdbb2a7648667a5, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -851,8 +887,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2011941642}
-  - component: {fileID: 2011941643}
-  m_Layer: 0
+  - component: {fileID: 2011941644}
+  m_Layer: 3
   m_Name: BackGroundCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -874,8 +910,8 @@ Transform:
   m_Children: []
   m_Father: {fileID: 59320801}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!61 &2011941643
-BoxCollider2D:
+--- !u!68 &2011941644
+EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -884,7 +920,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: fd98284937ad9a848bdbb2a7648667a5, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -909,17 +945,17 @@ BoxCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0, y: 0}
-    oldSize: {x: 0, y: 0}
-    newSize: {x: 0, y: 0}
-    adaptiveTilingThreshold: 0
-    drawMode: 0
-    adaptiveTiling: 0
-  m_AutoTiling: 0
-  m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+  m_Points:
+  - {x: -0.50033313, y: 0.50068456}
+  - {x: 0.49436545, y: 0.50005585}
+  - {x: 0.50018835, y: -0.49975437}
+  - {x: -0.5000089, y: -0.49968246}
+  - {x: -0.500349, y: 0.5013783}
+  m_AdjacentStartPoint: {x: 0, y: 0}
+  m_AdjacentEndPoint: {x: 0, y: 0}
+  m_UseAdjacentStartPoint: 0
+  m_UseAdjacentEndPoint: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

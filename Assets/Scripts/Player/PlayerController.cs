@@ -4,64 +4,80 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     private const float STUN_TIME = 1f;
-    private const float MOVE_SPEED = 0.5f;
+    private const float MOVE_SPEED = 3f;
+    private const float JUMP_FORCE = 5f;
 
     private PlayerAnimationController _animationController;
     private EPlayerStatus _status = EPlayerStatus.Idle;
     private bool _isGround = true;
     private PlayerState _state = new PlayerState();
     private float _timer = 0f;
-    
-    // 캐릭터 뭐 선택했는지 여기서 처리해서 animator 바꿔줘야됨
+
+    private Rigidbody2D _rigid;
+    private int _moveDirection = 0;
+
+    [SerializeField]
+    private LayerMask _groundLayer;
+    [SerializeField]
+    private float _groundCheckDistance = 0.2f;
+
 
     public PlayerState State
     {
         get { return _state; }
     }
-    void Start()
+    private void CheckGround()
+    {
+        Vector2 origin = new Vector2(transform.position.x, transform.position.y - 0.5f);
+
+        _isGround = Physics2D.Raycast(
+            origin,
+            Vector2.down,
+            _groundCheckDistance,
+            _groundLayer
+        );
+        
+    }
+
+    private void Start()
     {
         _animationController = GetComponentInChildren<PlayerAnimationController>();
+        _rigid = GetComponent<Rigidbody2D>();
     }
-    void Update()
+    private void Update()
     {
+        CheckGround();
         Move();
+
+    }
+
+    private void FixedUpdate()
+    {
+        _rigid.linearVelocity = new Vector2(_moveDirection * MOVE_SPEED, _rigid.linearVelocity.y);
     }
 
     private void Move()
     {
         if (_state.IsStun)
-        {
-            if (_timer >= STUN_TIME)
-            {
-                _timer = 0f;
-                _state.IsStun = false;
-            }
-            _timer += Time.deltaTime;
             return;
-        }
 
-        if (!_isGround) return;
+        _moveDirection = 0;
 
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            //_isGround = false;
-            //_status = EPlayerStatus.Jump;
-            //_animationController.Jump();
-            Jump();
-        }
-        if (Keyboard.current.dKey.isPressed && _isGround)
+        
+        if (Keyboard.current.dKey.isPressed)
         {
             Right();
-            Walk();
+            _moveDirection = 1;
         }
-        else if (Keyboard.current.aKey.isPressed && _isGround)
+        else if (Keyboard.current.aKey.isPressed)
         {
-            Left();
-            Walk();
+             Left();
+            _moveDirection = -1;
         }
-        else
+
+        if (_isGround && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            _animationController.StopWalk();
+            Jump();
         }
     }
 
@@ -69,19 +85,11 @@ public class PlayerController : MonoBehaviour
     {
         _status = EPlayerStatus.Jump;
         _animationController.Jump();
-        //_isGround = false; => 이거 블럭이랑 충돌처리 확인해서 true바꿔줘야됨 (중력적용시켜야됨)
+        _isGround = false; 
+
+        _rigid.linearVelocity = new Vector2(_rigid.linearVelocity.x, JUMP_FORCE);
     }
-    private void Walk()
-    {
-        if(_state.IsLeft)
-        {
-            transform.localPosition = new Vector3(transform.localPosition.x- MOVE_SPEED*Time.deltaTime, transform.localPosition.y);
-        }
-        else
-        {
-            transform.localPosition = new Vector3(transform.localPosition.x + MOVE_SPEED * Time.deltaTime, transform.localPosition.y);
-        }
-    }
+
     private void Left()
     {
         _animationController.Flip(true);
