@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Utils;
 
 public class PlayerController : MonoBehaviour
 {
@@ -59,7 +60,11 @@ public class PlayerController : MonoBehaviour
     private void Move()
     {
         if (_state.IsStun)
+        {
+            //PlayerContext playerContext = new PlayerContext(, 0, true);               // 그리드 좌표 필요(첫번쨰 매개변수)
+            //SimpleSingleton<AIContextBuilder>.Instance.PlayerContext = playerContext;
             return;
+        }
 
         _moveDirection = 0;
 
@@ -74,6 +79,9 @@ public class PlayerController : MonoBehaviour
              Left();
             _moveDirection = -1;
         }
+
+        //PlayerContext playerContext = new PlayerContext(, _moveDirection, true);      // 그리드 좌표 필요(첫번쨰 매개변수)
+        //SimpleSingleton<AIContextBuilder>.Instance.PlayerContext = playerContext;
 
         if (_isGround && Keyboard.current.spaceKey.wasPressedThisFrame)
         {

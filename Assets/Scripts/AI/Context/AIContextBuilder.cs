@@ -6,7 +6,6 @@ using System.Collections.Generic;
 public class AIContextBuilder
 {
     // ╫л╠шео
-
     PlayerContext _player;
     GridContext _grid;
     IReadOnlyList<BlockOptionContext> _availableBlocks;
@@ -16,7 +15,7 @@ public class AIContextBuilder
     public PlayerContext PlayerContext { set { _player = value; } }
     public GridContext GridContext { set { _grid = value; } }
     public IReadOnlyList<BlockOptionContext> AvailableBlocks { set { _availableBlocks = value; } }
-    public BlockContext BlockContext { set { _activeBlock = value; } }
+    public BlockContext ActiveBlock { set { _activeBlock = value; } }
     public AIStateContext AIStateContext { set { _aiState = value; } }
 
     public AIContext Build()

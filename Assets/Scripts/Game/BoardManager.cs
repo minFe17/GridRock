@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
+using Utils;
 
 public class BoardManager : MonoBehaviour
 {
@@ -39,8 +40,12 @@ public class BoardManager : MonoBehaviour
         //드롭되는거 코루틴으로 빼야될듯 캐릭터 컨트롤하는거랑 같이 써야되니까.
 
         _randomBlocks.RemoveAt(index);
+
+        BlockContext activeBlock = new BlockContext(_randomBlocks[index].type, 0);
+        SimpleSingleton<AIContextBuilder>.Instance.ActiveBlock = activeBlock;
+        BlockContext();
     }
-    
+
     private void Awake()
     {
         DataManager.Instance.LoadData();
@@ -87,5 +92,16 @@ public class BoardManager : MonoBehaviour
             Debug.Log(_randomBlocks[i].name);
         }
 
+        BlockContext();
+    }
+
+    private void BlockContext()
+    {
+        List<BlockOptionContext> blocks = new List<BlockOptionContext>();
+
+        for (int i = 0; i < _randomBlocks.Count; i++)
+            blocks.Add(new BlockOptionContext(_randomBlocks[i].type));
+
+        SimpleSingleton<AIContextBuilder>.Instance.AvailableBlocks = blocks;
     }
 }
