@@ -13,9 +13,28 @@ public class BlockBoard : MonoBehaviour
     private float _topY = 2.9f;
     private float _endY = -5.08f;
     private float _space = 0.5f;
-    private int _centerIndexY = -1;
+    private int _maxTopIndex = 0;
     private float _preY;
+   
 
+    public int MaxTopIndex
+    {
+        //가장 높은 블록 Y인덱스 값입니다. 0이 제일 높고, 17이 제일 낮습니다.
+        //18일경우 블록이 아직 없는 것 입니다.
+        get { return _maxTopIndex; }
+    }
+    public int GetEmptyBlockNum
+    {
+        get
+        {
+            int empty = 0;
+            foreach (int block in _board)
+            {
+                if (block == 0) empty++;
+            }
+            return empty;
+        }
+    }
     public Dictionary<int, int> CheckBoard(BlockData data, Vector3 position)
     {
         Dictionary<int, int> blockTops = new Dictionary<int, int>();
@@ -45,20 +64,20 @@ public class BlockBoard : MonoBehaviour
         else if (position.y == 2.9f)
         {
             _preY = 2.9f;
-            _centerIndexY = 0;
+            _maxTopIndex = 0;
             return;
         }
 
         _preY = position.y;
-        _centerIndexY++;
+        _maxTopIndex++;
         
 
         //float y = position.y;
 
 
-        Debug.Log(_centerIndexY);
+        Debug.Log(_maxTopIndex);
 
-        if (_centerIndexY == Y_SIZE - 1) //이거 그 센터 1짜리로 잡아놔서 그런가? 아근데 I는 아닌데그럼?
+        if (_maxTopIndex == Y_SIZE - 1) //이거 그 센터 1짜리로 잡아놔서 그런가? 아근데 I는 아닌데그럼?
         {
             //obj.GetComponent<BlockController>().StopDrop();
 
@@ -76,8 +95,8 @@ public class BlockBoard : MonoBehaviour
             foreach (CellIndex index in data.index)
             {
 
-                if (_centerIndexY + index.y+1 > 17 || _centerIndexY + index.y<0) continue; //리턴해도되지않을까?
-                else if (_board[_centerIndexY + index.y + 1, xIndex] != 1) continue;
+                if (_maxTopIndex + index.y+1 > 17 || _maxTopIndex + index.y<0) continue; //리턴해도되지않을까?
+                else if (_board[_maxTopIndex + index.y + 1, xIndex] != 1) continue;
 
                 isHit = true;
             }
@@ -85,7 +104,7 @@ public class BlockBoard : MonoBehaviour
             if (!isHit) return;
             //obj.GetComponent<BlockController>().StopDrop();
 
-            Vector2 pos = new Vector2(position.x, (_topY - _centerIndexY * _space));
+            Vector2 pos = new Vector2(position.x, (_topY - _maxTopIndex * _space));
             obj.transform.localPosition = pos;
 
             AddIndex(data, pos);
@@ -102,6 +121,9 @@ public class BlockBoard : MonoBehaviour
             _board[index.y + yIndex, index.x + xIndex] = 1; //연산 꼬일수도있다
             Debug.Log(index.y + yIndex);
             Debug.Log(index.x + xIndex);
+
+            if(index.y+yIndex < _maxTopIndex)
+                _maxTopIndex = index.y+yIndex;
         }
 
 
@@ -121,6 +143,7 @@ public class BlockBoard : MonoBehaviour
     {
         float length = Mathf.Abs(_endY - _topY);
         _space = length / (Y_SIZE-1);
+        _maxTopIndex = Y_SIZE;
         //이거 블록크기랑 다시 다 맞춰야될듯
     }
 
