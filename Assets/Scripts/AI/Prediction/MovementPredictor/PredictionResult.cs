@@ -6,16 +6,9 @@ public readonly struct PredictionResult
     public readonly float LeftScore;      // 왼쪽 이동 선호도
     public readonly float RightScore;     // 오른쪽 이동 선호도
 
-    public readonly bool HasEscapeRoute;  // 탈출 가능성 존재 여부
-    public readonly bool HasDanger;       // 위험 요소 존재 여부
-    public readonly bool HasTetris;       // 보상 요소 존재 여부
-
-    public PredictionResult(float leftScore, float rightScore, bool hasEscapeRoute, bool hasDanger, bool hasTetris)
+    public PredictionResult(float leftScore, float rightScore)
     {
         LeftScore = leftScore;
         RightScore = rightScore;
-        HasEscapeRoute = hasEscapeRoute;
-        HasDanger = hasDanger;
-        HasTetris = hasTetris;
     }
 }

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using UnityEngine;
+using Utils;
 
 /// <summary>
 /// AI의 상위 의사결정을 담당하는 브레인 클래스
@@ -32,10 +34,43 @@ public class AIBrain
     // 현재 AI가 유지 중인 Goal
     public EAIGoalType CurrentGoal => _goalState.CurrentGoal;
 
-    public void Update(float deltaTime, in AISimulationState simulation, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
+    public void Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
     {
-        UpdateGoal(deltaTime, simulation);
-        ExecuteAction(simulation, trigger, actionContext);
+        // 후보 액션마다 PredictedWorldState 생성
+        Vector2 predictedPosition = PredictCandidatePosition(); // 후보 위치 계산
+        SpatialMetrics spatial = AnalyzePlayerSpace(predictedPosition); // 공간 분석
+        float futureTrapRisk = EstimateFutureRisk(predictedPosition, spatial); // 위험 예측
+
+        PredictedWorldState predictedState = new PredictedWorldState(predictedPosition, spatial, futureTrapRisk);
+
+        // 2. OutcomeEvaluation 생성
+        OutcomeEvaluation evaluation = OutcomeEvaluator.Evaluate(predictedState);
+
+        // 3. AISimulationState 생성
+        AIContext context = SimpleSingleton<AIContextBuilder>.Instance.Build();
+        BlockState blockState = BuildBlockState(context.ActiveBlock, context.Grid);
+        AISimulationState simulationState = new AISimulationState(evaluation, new AIThreat(), context.Player, blockState);
+
+        UpdateGoal(deltaTime, simulationState);
+        ExecuteAction(simulationState, trigger, actionContext);
+    }
+
+    Vector2 PredictCandidatePosition()
+    {
+        // 임시: 현재 플레이어 위치 + 오른쪽으로 1타일 이동
+        return new Vector2(0, 0); // 실제 위치로 교체 필요
+    }
+
+    SpatialMetrics AnalyzePlayerSpace(Vector2 pos)
+    {
+        // 임시: 임의 값 반환
+        return new SpatialMetrics(reachableTileCount: 10, regionSize: 20, escapePathLength: 5, chokePointCount: 1, adjacentBlockCount: 2);
+    }
+
+    float EstimateFutureRisk(Vector2 pos, SpatialMetrics spatial)
+    {
+        // 임시: 안전한 상태 가정
+        return 0f;
     }
 
     // Goal 처리
@@ -92,5 +127,25 @@ public class AIBrain
         // 예: 상대 스택 증가, 위기 상태 유도 등
 
         return true;
+    }
+
+    BlockState BuildBlockState(BlockContext? blockContext, GridContext grid)
+    {
+        if (!blockContext.HasValue)
+            return new BlockState(EBlockType.Max, Vector2.zero, 0, true, 0);
+        float pressure = 0f;
+        Vector2 pos = new Vector2(0, 0); // 실제 위치 계산 필요
+        for (int x = -1; x <= 1; x++)
+        {
+            for (int y = -1; y <= 1; y++)
+            {
+                if (x == 0 && y == 0)
+                    continue;
+                if (grid.IsOccupied(pos + new Vector2(x, y)))
+                    pressure += 0.5f;
+            }
+        }
+        BlockContext block = blockContext.Value;
+        return new BlockState(block.BlockType, pos, block.Rotation, true, pressure);
     }
 }

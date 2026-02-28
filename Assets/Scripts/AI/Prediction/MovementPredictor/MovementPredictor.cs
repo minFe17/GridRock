@@ -23,7 +23,7 @@ public static class MovementPredictor
         ApplyContextBias(ref leftScore, ref rightScore, input);
 
         // 점수와 방향별 맥락 요약 결과 반환
-        return new PredictionResult(leftScore, rightScore, input.CanEscapeLeft || input.CanEscapeRight, input.NearDangerLeft || input.NearDangerRight, input.NearTetrisLeft || input.NearTetrisRight);
+        return new PredictionResult(leftScore, rightScore);
     }
 
     // 최근 이동 방향과 유지 시간에 따른 관성 점수 적용

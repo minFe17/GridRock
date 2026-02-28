@@ -13,10 +13,10 @@ public class MockStrategyLearning : IAIStrategyLearning
 
     void IAIStrategyLearning.Record(EAIGoalType goal, in AISimulationState simulation, bool success)
     {
-        AIStrategyRecord record = new AIStrategyRecord(goal, success, simulation.TotalScore);
+        AIStrategyRecord record = new AIStrategyRecord(goal, success, simulation.Score.TotalScore);
 
         _records.Add(record);
 
-        Debug.Log($"[AI Learning] Goal={goal}, Success={success}, Score={simulation.TotalScore}");
+        Debug.Log($"[AI Learning] Goal={goal}, Success={success}, Score={simulation.Score.TotalScore}");
     }
 }
