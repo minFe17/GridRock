@@ -6,9 +6,14 @@ public class BackGround : MonoBehaviour
     const float SPACE_NUM = 0.5f;
     const int Y_LENGTH = 18;
     const int X_LENGTH = 13;
-    
+
+    private float _spawnPositionX = 0;
     private PoolingManager _poolingManager;
 
+    public float SpawnPositionX
+    {
+        get { return _spawnPositionX; }
+    }
     private void OnEnable()
     {
         MakeBackGround();
@@ -30,10 +35,14 @@ public class BackGround : MonoBehaviour
             for (int x = 0; x < X_LENGTH; x++)
             {
                 GameObject obj = _poolingManager.Pop();
-                obj.transform.localPosition = new Vector3(x*SPACE_NUM,y*SPACE_NUM,0);
+                obj.transform.localPosition = new Vector3(x * SPACE_NUM, y * SPACE_NUM, 0);
+
+                if(_spawnPositionX == 0)
+                    _spawnPositionX = obj.transform.position.x;
                 //행렬 반대로 계산해야됨
             }
-            
+
         }
+
     }
 }

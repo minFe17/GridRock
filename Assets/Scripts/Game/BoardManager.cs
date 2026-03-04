@@ -53,6 +53,7 @@ public class BoardManager : MonoBehaviour
     }
     private void Start()
     {
+        
         CreateBlocks();
     }
 

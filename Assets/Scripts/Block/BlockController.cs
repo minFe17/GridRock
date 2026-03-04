@@ -77,7 +77,7 @@ public class BlockController : MonoBehaviour
         }
         _blockTops = _board.CheckBoard(_data, transform.localPosition);
     }
-   
+
 
     public void StartDrop()
     {
@@ -129,7 +129,7 @@ public class BlockController : MonoBehaviour
 
         foreach (var index in _data.index)
         {
-            int xIndex = (int)((transform.localPosition.x ) / 0.5f) + index.x;
+            int xIndex = (int)((transform.localPosition.x ) / 0.5f) + index.x ; //인덱스위치값보정
             int yIndex = (int)(Mathf.Abs(_preY-2.9f)/0.5f)+index.y + 1; //블럭 보정값
             //Debug.Log(yIndex);
             if (_blockTops[xIndex] == yIndex)
