@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public static class SpatialAnalyzer
@@ -8,61 +7,48 @@ public static class SpatialAnalyzer
         int width = board.GetLength(0);
         int height = board.GetLength(1);
 
-        bool[,] visited = new bool[width, height];
-        Queue<Vector2Int> queue = new Queue<Vector2Int>();
-
         Vector2Int start = new Vector2Int((int)playerPos.x, (int)playerPos.y);
 
-        // Ω√¿€ ¿ßƒ°∞° ∏∑«Ù ¿÷¿∏∏È ∞¯∞£ 0
+        if (!IsInBounds(start, width, height))
+            return new SpatialMetrics(0, 0);
+
         if (board[start.x, start.y])
-            return new SpatialMetrics(0, 4);
+            return new SpatialMetrics(0, CountAdjacentBlocks(board, start, width, height));
 
-        queue.Enqueue(start);
-        visited[start.x, start.y] = true;
+        int leftRun = CountRun(board, start, width, height, Vector2Int.left);
+        int rightRun = CountRun(board, start, width, height, Vector2Int.right);
 
-        int reachableCount = 0;
-
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-
-        while (queue.Count > 0)
-        {
-            Vector2Int current = queue.Dequeue();
-            reachableCount++;
-
-            foreach (Vector2Int dir in directions)
-            {
-                Vector2Int next = current + dir;
-
-                if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height)
-                    continue;
-
-                if (visited[next.x, next.y])
-                    continue;
-
-                if (board[next.x, next.y])
-                    continue;
-
-                visited[next.x, next.y] = true;
-                queue.Enqueue(next);
-            }
-        }
-
+        // ÌîåÎ†àÏù¥Ïñ¥ Ï§ëÏã¨ Ï¢åÏö∞ ÏÉùÏ°¥ Í≥µÍ∞Ñ: ÌòÑÏû¨ Ïπ∏ + Ï¢å/Ïö∞ Ïó∞ÏÜç Ïù¥Îèô Í∞ÄÎä• Ïπ∏
+        int reachableTiles = 1 + leftRun + rightRun;
         int adjacentBlocks = CountAdjacentBlocks(board, start, width, height);
 
-        return new SpatialMetrics(reachableCount, adjacentBlocks);
+        return new SpatialMetrics(reachableTiles, adjacentBlocks);
+    }
+
+    private static int CountRun(bool[,] board, Vector2Int start, int width, int height, Vector2Int direction)
+    {
+        int run = 0;
+        Vector2Int cursor = start + direction;
+
+        while (IsInBounds(cursor, width, height) && !board[cursor.x, cursor.y])
+        {
+            run++;
+            cursor += direction;
+        }
+
+        return run;
     }
 
     private static int CountAdjacentBlocks(bool[,] board, Vector2Int pos, int width, int height)
     {
         int count = 0;
-
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        Vector2Int[] directions = { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
 
         foreach (Vector2Int dir in directions)
         {
             Vector2Int next = pos + dir;
 
-            if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height)
+            if (!IsInBounds(next, width, height))
                 continue;
 
             if (board[next.x, next.y])
@@ -70,5 +56,10 @@ public static class SpatialAnalyzer
         }
 
         return count;
+    }
+
+    private static bool IsInBounds(Vector2Int pos, int width, int height)
+    {
+        return pos.x >= 0 && pos.x < width && pos.y >= 0 && pos.y < height;
     }
 }
