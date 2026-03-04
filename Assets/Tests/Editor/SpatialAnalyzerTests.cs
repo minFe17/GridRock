@@ -11,11 +11,11 @@ public class SpatialAnalyzerTests
 
         SpatialMetrics spatial = SpatialAnalyzer.Analyze(board, pos);
 
-        Assert.AreEqual(25, spatial.EscapePathLength);
+        Assert.AreEqual(25, spatial.ReachableTileCount);
     }
 
     [Test]
-    public void Surrounded_ShouldHaveZeroEscape()
+    public void Surrounded_ShouldOnlyReachSelf()
     {
         bool[,] board = new bool[5, 5];
 
@@ -27,6 +27,6 @@ public class SpatialAnalyzerTests
 
         SpatialMetrics spatial = SpatialAnalyzer.Analyze(board, pos);
 
-        Assert.AreEqual(1, spatial.EscapePathLength);
+        Assert.AreEqual(1, spatial.ReachableTileCount);
     }
 }

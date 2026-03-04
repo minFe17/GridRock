@@ -13,9 +13,9 @@ public static class SpatialAnalyzer
 
         Vector2Int start = new Vector2Int((int)playerPos.x, (int)playerPos.y);
 
-        // 시작 위치가 막혀 있으면 탈출 0
+        // 시작 위치가 막혀 있으면 공간 0
         if (board[start.x, start.y])
-            return new SpatialMetrics(0, 0, 0, 0, 0);
+            return new SpatialMetrics(0, 4);
 
         queue.Enqueue(start);
         visited[start.x, start.y] = true;
@@ -47,6 +47,28 @@ public static class SpatialAnalyzer
             }
         }
 
-        return new SpatialMetrics(reachableTileCount: reachableCount, regionSize: reachableCount, escapePathLength: reachableCount, chokePointCount: 0, adjacentBlockCount: 0);
+        int adjacentBlocks = CountAdjacentBlocks(board, start, width, height);
+
+        return new SpatialMetrics(reachableCount, adjacentBlocks);
+    }
+
+    private static int CountAdjacentBlocks(bool[,] board, Vector2Int pos, int width, int height)
+    {
+        int count = 0;
+
+        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        foreach (Vector2Int dir in directions)
+        {
+            Vector2Int next = pos + dir;
+
+            if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height)
+                continue;
+
+            if (board[next.x, next.y])
+                count++;
+        }
+
+        return count;
     }
 }

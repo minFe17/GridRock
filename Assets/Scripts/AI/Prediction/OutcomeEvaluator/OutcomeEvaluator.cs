@@ -1,53 +1,79 @@
-using UnityEngine;
-
 /// <summary>
 /// 시뮬레이션된 상태를 여러 판단 기준으로 수치화하여 
 /// AI 의사결정에 사용할 평가 결과를 생성하는 평가기 클래스
 /// </summary>
 public static class OutcomeEvaluator
 {
-    // 시뮬레이션된 상태를 여러 관점(생존/탈출/보상/위험)으로 평가
     public static OutcomeEvaluation Evaluate(in PredictedWorldState state)
     {
-        float survivalScore = EvaluateSurvival(state);  // 살아남을 가능성
-        float escapeScore = EvaluateEscape(state);      // 빠져나갈 수 있는지
-        float tetrisScore = EvaluateTetris(state);      // 테트리스 기여도
-        float dangerScore = EvaluateDanger(state);      // 위험 노출도
+        EAIGoalType goal;
+        // 즉사 가능
+        if (IsKill(state))
+            goal = EAIGoalType.KillNow;
 
-        return new OutcomeEvaluation(survivalScore, escapeScore, tetrisScore, dangerScore);
+        // 완전 고립 가능
+        if (IsTrap(state))
+            goal = EAIGoalType.TrapPlayer;
+        else
+        {
+            // 공간 압박 점수
+            float pressureScore = EvaluatePressure(state);
+
+            // 실수 유도 점수 (선택지 축소 기반)
+            float mistakeScore = EvaluateForceMistake(state);
+
+            goal = pressureScore >= mistakeScore ? EAIGoalType.ApplyPressure : EAIGoalType.ForceMistake;
+        }
+
+
+        // 세부 점수 계산
+        float survival = state.Spatial.ReachableTileCount;
+        float escape = state.Spatial.ReachableTileCount;
+        float danger = state.Spatial.AdjacentBlockCount;
+        float tetris = 0f;
+
+        // Goal별 total 계산
+        float totalScore = CalculateTotalScore(goal, survival, escape, danger, tetris);
+
+        return new OutcomeEvaluation(goal, survival, escape, danger, tetris, totalScore);
     }
 
-    // 생존 가능성 평가
-    static float EvaluateSurvival(in PredictedWorldState state)
+    static float CalculateTotalScore(EAIGoalType goal, float survival, float escape, float danger, float tetris)
     {
-        return Mathf.Clamp(state.Spatial.ReachableTileCount / (float)state.Spatial.RegionSize, 0f, 1f) * 5f;
+        switch (goal)
+        {
+            case EAIGoalType.KillNow:
+                return danger * 5f - escape * 3f;
+
+            case EAIGoalType.TrapPlayer:
+                return -escape * 4f + danger * 2f;
+
+            case EAIGoalType.ForceMistake:
+                return danger * 3f - survival * 1f;
+
+            case EAIGoalType.ApplyPressure:
+            default:
+                return -escape * 2f + danger * 2f;
+        }
     }
 
-    // 탈출 관점 평가
-    static float EvaluateEscape(in PredictedWorldState state)
+    static bool IsKill(in PredictedWorldState state)
     {
-        float score = 0f;
-        score -= state.Spatial.ChokePointCount * 0.5f;
-
-        if (state.Spatial.EscapePathLength <= 2)
-            score -= 3f;
-
-        if (state.Spatial.ReachableTileCount <= 1)
-            score -= 5f; // 완전 갇힘
-
-        return score;
+        return state.Spatial.ReachableTileCount == 0;
     }
 
-    // 테트리스 완성에 도움이 되는 상태인지 평가
-    static float EvaluateTetris(in PredictedWorldState state)
+    static bool IsTrap(in PredictedWorldState state)
     {
-        // 임시: 병목이 많으면 압박 유리하다고 가정
-        return state.Spatial.ChokePointCount * 0.5f;
+        return state.Spatial.ReachableTileCount <= 1;
     }
 
-    // 위험 노출 평가
-    static float EvaluateDanger(in PredictedWorldState state)
+    static float EvaluatePressure(in PredictedWorldState state)
     {
-        return state.FutureTrapRisk * 5f + state.Spatial.ChokePointCount * 0.5f;
+        return -state.Spatial.ReachableTileCount + state.Spatial.AdjacentBlockCount * 3f;
+    }
+
+    static float EvaluateForceMistake(in PredictedWorldState state)
+    {
+        return state.Spatial.AdjacentBlockCount * 2f;
     }
 }

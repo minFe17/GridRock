@@ -3,5 +3,5 @@
 /// </summary>
 public interface IAIBrain
 {
-    void Update(float deltaTime);
+    void Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext);
 }

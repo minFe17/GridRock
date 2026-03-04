@@ -7,7 +7,7 @@ using UnityEngine;
 public readonly struct AISimulationState
 {
     // --- 평가 점수 ---
-    public readonly AIScore Score;
+    public readonly OutcomeEvaluation Score;
 
     // --- 위험/탈출 정보 ---
     public readonly AIThreat AIThreat;
@@ -17,7 +17,7 @@ public readonly struct AISimulationState
 
     public AISimulationState(in OutcomeEvaluation evaluation, AIThreat aIThreat, PlayerContext playerInfo, BlockState blockInfo)
     {
-        Score = new AIScore(evaluation);
+        Score = evaluation;
         AIThreat = aIThreat;
         PlayerInfo = playerInfo;
         BlockInfo = blockInfo;

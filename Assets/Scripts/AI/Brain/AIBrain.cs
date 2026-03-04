@@ -6,7 +6,7 @@ using Utils;
 /// AI의 상위 의사결정을 담당하는 브레인 클래스
 /// 예측 결과와 평가 점수를 바탕으로 현재 목적을 선택하고 일정 시간 유지
 /// </summary>
-public class AIBrain
+public class AIBrain : IAIBrain
 {
     // Goal 관련
     AIGoalState _goalState;
@@ -20,13 +20,16 @@ public class AIBrain
     // Learning
     readonly IAIStrategyLearning _learning;
 
-    public AIBrain(IAIGoalDecider goalDecider, IAIGoalTermination termination, IAIActionProvider actionProvider, AIActionSelector actionSelector, IAIStrategyLearning learning)
+    readonly IAISimulationService _simulationService;
+
+    public AIBrain(IAIGoalDecider goalDecider, IAIGoalTermination termination, IAIActionProvider actionProvider, AIActionSelector actionSelector, IAIStrategyLearning learning, IAISimulationService simulationService)
     {
         _goalDecider = goalDecider;
         _termination = termination;
         _actionProvider = actionProvider;
         _actionSelector = actionSelector;
         _learning = learning;
+        _simulationService = simulationService;
 
         _goalState = new AIGoalState(EAIGoalType.None, 0f);
     }
@@ -34,43 +37,12 @@ public class AIBrain
     // 현재 AI가 유지 중인 Goal
     public EAIGoalType CurrentGoal => _goalState.CurrentGoal;
 
-    public void Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
+    void IAIBrain.Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
     {
-        // 후보 액션마다 PredictedWorldState 생성
-        Vector2 predictedPosition = PredictCandidatePosition(); // 후보 위치 계산
-        SpatialMetrics spatial = AnalyzePlayerSpace(predictedPosition); // 공간 분석
-        float futureTrapRisk = EstimateFutureRisk(predictedPosition, spatial); // 위험 예측
+        AISimulationState simulation = _simulationService.Simulate();
 
-        PredictedWorldState predictedState = new PredictedWorldState(predictedPosition, spatial, futureTrapRisk);
-
-        // 2. OutcomeEvaluation 생성
-        OutcomeEvaluation evaluation = OutcomeEvaluator.Evaluate(predictedState);
-
-        // 3. AISimulationState 생성
-        AIContext context = SimpleSingleton<AIContextBuilder>.Instance.Build();
-        BlockState blockState = BuildBlockState(context.ActiveBlock, context.Grid);
-        AISimulationState simulationState = new AISimulationState(evaluation, new AIThreat(), context.Player, blockState);
-
-        UpdateGoal(deltaTime, simulationState);
-        ExecuteAction(simulationState, trigger, actionContext);
-    }
-
-    Vector2 PredictCandidatePosition()
-    {
-        // 임시: 현재 플레이어 위치 + 오른쪽으로 1타일 이동
-        return new Vector2(0, 0); // 실제 위치로 교체 필요
-    }
-
-    SpatialMetrics AnalyzePlayerSpace(Vector2 pos)
-    {
-        // 임시: 임의 값 반환
-        return new SpatialMetrics(reachableTileCount: 10, regionSize: 20, escapePathLength: 5, chokePointCount: 1, adjacentBlockCount: 2);
-    }
-
-    float EstimateFutureRisk(Vector2 pos, SpatialMetrics spatial)
-    {
-        // 임시: 안전한 상태 가정
-        return 0f;
+        UpdateGoal(deltaTime, simulation);
+        ExecuteAction(simulation, trigger, actionContext);
     }
 
     // Goal 처리
@@ -129,23 +101,5 @@ public class AIBrain
         return true;
     }
 
-    BlockState BuildBlockState(BlockContext? blockContext, GridContext grid)
-    {
-        if (!blockContext.HasValue)
-            return new BlockState(EBlockType.Max, Vector2.zero, 0, true, 0);
-        float pressure = 0f;
-        Vector2 pos = new Vector2(0, 0); // 실제 위치 계산 필요
-        for (int x = -1; x <= 1; x++)
-        {
-            for (int y = -1; y <= 1; y++)
-            {
-                if (x == 0 && y == 0)
-                    continue;
-                if (grid.IsOccupied(pos + new Vector2(x, y)))
-                    pressure += 0.5f;
-            }
-        }
-        BlockContext block = blockContext.Value;
-        return new BlockState(block.BlockType, pos, block.Rotation, true, pressure);
-    }
+    
 }

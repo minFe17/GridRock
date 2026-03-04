@@ -13,7 +13,7 @@ public static class DecisionMaker
 
         for (int i = 0; i < evaluations.Count; i++)
         {
-            float score = CalculateAIScore(evaluations[i]);
+            float score = evaluations[i].TotalScore;
 
             if (score > bestScore)
             {
@@ -21,27 +21,6 @@ public static class DecisionMaker
                 bestIndex = i;
             }
         }
-
         return bestIndex;
-    }
-
-    // AI 관점에서 점수를 계산
-    static float CalculateAIScore(in OutcomeEvaluation eval)
-    {
-        float score = 0f;
-
-        // 플레이어 생존 방해
-        score -= eval.SurvivalScore * 1.5f;
-
-        // 탈출 방해
-        score -= eval.EscapeScore * 2.0f;
-
-        // 위험 유도는 AI에게 유리
-        score += eval.DangerScore * 2.5f;
-
-        // 테트리스 기여는 약하게 반영
-        score -= eval.TetrisScore * 0.5f;
-
-        return score;
     }
 }
