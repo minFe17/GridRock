@@ -8,67 +8,61 @@ public static class SpatialAnalyzer
         int width = board.GetLength(0);
         int height = board.GetLength(1);
 
-        bool[,] visited = new bool[width, height];
-        Queue<Vector2Int> queue = new Queue<Vector2Int>();
+        int regionSize = CountEmptyTiles(board, width, height);
 
         Vector2Int start = new Vector2Int((int)playerPos.x, (int)playerPos.y);
-
-        // ½ÃÀÛ À§Ä¡°¡ ¸·Çô ÀÖÀ¸¸é °ø°£ 0
-        if (board[start.x, start.y])
-            return new SpatialMetrics(0, 4);
-
-        queue.Enqueue(start);
-        visited[start.x, start.y] = true;
+        bool isStartInBounds = start.x >= 0 && start.x < width && start.y >= 0 && start.y < height;
 
         int reachableCount = 0;
 
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-
-        while (queue.Count > 0)
+        // reachableTileCountëŠ” ì‹œì‘ ìœ„ì¹˜ ê¸°ì¤€ BFS ê²°ê³¼ë§Œ ì‚¬ìš©í•œë‹¤.
+        if (isStartInBounds && !board[start.x, start.y])
         {
-            Vector2Int current = queue.Dequeue();
-            reachableCount++;
+            bool[,] visited = new bool[width, height];
+            Queue<Vector2Int> queue = new Queue<Vector2Int>();
+            Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
-            foreach (Vector2Int dir in directions)
+            queue.Enqueue(start);
+            visited[start.x, start.y] = true;
+
+            while (queue.Count > 0)
             {
-                Vector2Int next = current + dir;
+                Vector2Int current = queue.Dequeue();
+                reachableCount++;
 
-                if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height)
-                    continue;
+                foreach (Vector2Int dir in directions)
+                {
+                    Vector2Int next = current + dir;
 
-                if (visited[next.x, next.y])
-                    continue;
+                    if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height)
+                        continue;
 
-                if (board[next.x, next.y])
-                    continue;
+                    if (visited[next.x, next.y] || board[next.x, next.y])
+                        continue;
 
-                visited[next.x, next.y] = true;
-                queue.Enqueue(next);
+                    visited[next.x, next.y] = true;
+                    queue.Enqueue(next);
+                }
             }
         }
 
-        int adjacentBlocks = CountAdjacentBlocks(board, start, width, height);
-
-        return new SpatialMetrics(reachableCount, adjacentBlocks);
+        // regionSizeëŠ” ë³´ë“œ ì „ì²´ ë¹ˆì¹¸ ìˆ˜ë¡œ, reachableTileCountì™€ ë…ë¦½ì ìœ¼ë¡œ ê³„ì‚°í•œë‹¤.
+        return new SpatialMetrics(reachableCount, regionSize);
     }
 
-    private static int CountAdjacentBlocks(bool[,] board, Vector2Int pos, int width, int height)
+    private static int CountEmptyTiles(bool[,] board, int width, int height)
     {
-        int count = 0;
+        int emptyTileCount = 0;
 
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-
-        foreach (Vector2Int dir in directions)
+        for (int x = 0; x < width; x++)
         {
-            Vector2Int next = pos + dir;
-
-            if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= height)
-                continue;
-
-            if (board[next.x, next.y])
-                count++;
+            for (int y = 0; y < height; y++)
+            {
+                if (!board[x, y])
+                    emptyTileCount++;
+            }
         }
 
-        return count;
+        return emptyTileCount;
     }
 }
