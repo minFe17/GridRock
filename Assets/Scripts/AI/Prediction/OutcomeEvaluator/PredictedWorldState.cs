@@ -1,23 +1,28 @@
 using UnityEngine;
 
 /// <summary>
-/// AI가 특정 행동을 가정했을 때 도달하는 가상의 결과 상태를 표현하는 구조체
-/// 실제 월드 상태가 아니라, 예측/시뮬레이션용 상태 스냅샷
+/// AI가 특정 행동을 시뮬레이션한 뒤 예측된 월드 상태를 표현
 /// </summary>
 public readonly struct PredictedWorldState
 {
     public readonly Vector2 Position;
 
-    // 공간 정보
-    public readonly SpatialMetrics Spatial;
+    // 블록 적용 전/후 공간 분석 결과
+    public readonly SpatialMetrics SpatialBefore;
+    public readonly SpatialMetrics SpatialAfter;
+
+    // 도달 가능한 타일 감소량 (Before - After)
+    public readonly int ReachableDelta;
 
     // 미래 위험
-    public readonly float FutureTrapRisk;     // 0~1 사이
+    public readonly float FutureTrapRisk;
 
-    public PredictedWorldState(Vector2 position, SpatialMetrics spatial, float futureTrapRisk)
+    public PredictedWorldState(Vector2 position, SpatialMetrics spatialBefore, SpatialMetrics spatialAfter, float futureTrapRisk)
     {
         Position = position;
-        Spatial = spatial;
+        SpatialBefore = spatialBefore;
+        SpatialAfter = spatialAfter;
+        ReachableDelta = spatialBefore.ReachableTileCount - spatialAfter.ReachableTileCount;
         FutureTrapRisk = futureTrapRisk;
     }
 }

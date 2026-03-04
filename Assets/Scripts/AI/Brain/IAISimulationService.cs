@@ -1,4 +1,4 @@
 public interface IAISimulationService
 {
-    AISimulationState Simulate();
+    AISimulationState Simulate(in AIActionContext actionContext);
 }

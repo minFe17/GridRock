@@ -3,8 +3,7 @@ using UnityEngine;
 using Utils;
 
 /// <summary>
-/// AI의 상위 의사결정을 담당하는 브레인 클래스
-/// 예측 결과와 평가 점수를 바탕으로 현재 목적을 선택하고 일정 시간 유지
+/// AI의 목표/행동 의사결정을 수행하는 브레인
 /// </summary>
 public class AIBrain : IAIBrain
 {
@@ -39,7 +38,7 @@ public class AIBrain : IAIBrain
 
     void IAIBrain.Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
     {
-        AISimulationState simulation = _simulationService.Simulate();
+        AISimulationState simulation = _simulationService.Simulate(actionContext);
 
         UpdateGoal(deltaTime, simulation);
         ExecuteAction(simulation, trigger, actionContext);
@@ -100,6 +99,4 @@ public class AIBrain : IAIBrain
 
         return true;
     }
-
-    
 }
