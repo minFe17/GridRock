@@ -25,11 +25,10 @@ public static class OutcomeEvaluator
             goal = pressureScore >= mistakeScore ? EAIGoalType.ApplyPressure : EAIGoalType.ForceMistake;
         }
 
-
         // 세부 점수 계산
         float survival = state.SpatialAfter.ReachableTileCount;
-        float escape = state.SpatialAfter.ReachableTileCount;
-        float danger = state.SpatialAfter.AdjacentBlockCount;
+        float escape = state.SpatialAfter.EscapeRouteCount;
+        float danger = state.SpatialAfter.DangerScore;
         float tetris = 0f;
 
         // Goal별 total 계산
@@ -51,7 +50,7 @@ public static class OutcomeEvaluator
                 return -escape * 4f + danger * 2f + reachableDelta * 3f;
 
             case EAIGoalType.ForceMistake:
-                return danger * 3f - survival * 1 + reachableDelta * 2f;
+                return danger * 3f - survival + reachableDelta * 2f;
 
             case EAIGoalType.ApplyPressure:
             default:
@@ -66,16 +65,18 @@ public static class OutcomeEvaluator
 
     static bool IsTrap(in PredictedWorldState state)
     {
-        return state.SpatialAfter.ReachableTileCount <= 1;
+        return !state.SpatialAfter.HasEscapeRoute && state.SpatialAfter.ReachableTileCount <= 3;
     }
 
     static float EvaluatePressure(in PredictedWorldState state)
     {
-        return -state.SpatialAfter.ReachableTileCount + state.SpatialAfter.AdjacentBlockCount * 3f + state.ReachableDelta * 2f;
+        float escapePenalty = state.SpatialAfter.HasEscapeRoute ? 0f : 2f;
+        return -state.SpatialAfter.ReachableTileCount + state.SpatialAfter.AdjacentBlockCount * 3f + state.ReachableDelta * 2f + escapePenalty;
     }
 
     static float EvaluateForceMistake(in PredictedWorldState state)
     {
-        return state.SpatialAfter.AdjacentBlockCount * 2f + state.ReachableDelta;
+        float cornerBonus = state.SpatialAfter.IsCornered ? 2f : 0f;
+        return state.SpatialAfter.DangerScore * 2f + state.ReachableDelta + cornerBonus;
     }
 }

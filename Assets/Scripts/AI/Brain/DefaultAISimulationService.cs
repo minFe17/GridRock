@@ -4,11 +4,14 @@ using Utils;
 public class DefaultAISimulationService : IAISimulationService
 {
     AIContext _context;
+
     AISimulationState IAISimulationService.Simulate(in AIActionContext actionContext)
     {
         _context = SimpleSingleton<AIContextBuilder>.Instance.Build();
 
+        // 플레이어의 행동 이후 위치 예측
         Vector2 predictedPosition = PredictCandidatePosition();
+
         bool[,] boardBefore = _context.Grid.Occupancy;
         bool[,] boardAfter = BuildBoardAfterBlockPlacement(boardBefore, predictedPosition);
 
@@ -29,6 +32,7 @@ public class DefaultAISimulationService : IAISimulationService
     // 행동 이후 플레이어 위치 예측
     Vector2 PredictCandidatePosition()
     {
+        // 임시
         return new Vector2(_context.Player.GridPosition.x, _context.Player.GridPosition.y);
     }
 

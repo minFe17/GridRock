@@ -4,14 +4,17 @@ using UnityEngine;
 public class SpatialAnalyzerTests
 {
     [Test]
-    public void OpenArea_ShouldHaveLargeEscape()
+    public void OpenLane_ShouldHaveWideHorizontalEscape()
     {
         bool[,] board = new bool[5, 5];
         Vector2 pos = new Vector2(2, 2);
 
         SpatialMetrics spatial = SpatialAnalyzer.Analyze(board, pos);
 
-        Assert.AreEqual(25, spatial.ReachableTileCount);
+        Assert.AreEqual(5, spatial.ReachableTileCount);
+        Assert.AreEqual(2, spatial.EscapeRouteCount);
+        Assert.IsTrue(spatial.HasEscapeRoute);
+        Assert.IsFalse(spatial.IsCornered);
     }
 
     [Test]
@@ -28,5 +31,21 @@ public class SpatialAnalyzerTests
         SpatialMetrics spatial = SpatialAnalyzer.Analyze(board, pos);
 
         Assert.AreEqual(1, spatial.ReachableTileCount);
+        Assert.AreEqual(0, spatial.EscapeRouteCount);
+        Assert.IsFalse(spatial.HasEscapeRoute);
+        Assert.IsTrue(spatial.IsCornered);
+        Assert.Greater(spatial.DangerScore, 7f);
+    }
+
+    [Test]
+    public void BlockedLeftLane_ShouldHaveSingleEscapeRoute()
+    {
+        bool[,] board = new bool[6, 4];
+        board[1, 1] = true;
+
+        Vector2 pos = new Vector2(2, 1);
+        SpatialMetrics spatial = SpatialAnalyzer.Analyze(board, pos);
+
+        Assert.AreEqual(1, spatial.EscapeRouteCount);
     }
 }
