@@ -48,9 +48,11 @@ public class AIBrain : IAIBrain
     void UpdateGoal(float deltaTime, in AISimulationState simulation)
     {
         // 1. Lock 유지 중이면 감소
-        if (_goalState.LockTimer > 0f)
+        float remainingLockTime = Mathf.Max(0f, _goalState.LockTimer - deltaTime);
+
+        if (_goalState.CurrentGoal != EAIGoalType.None)
         {
-            EAIGoalType emergencyGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, _goalState.LockTimer, out float emergencyLockTime);
+            EAIGoalType emergencyGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, remainingLockTime, out float emergencyLockTime);
 
             if (emergencyGoal == EAIGoalType.KillNow && _goalState.CurrentGoal != EAIGoalType.KillNow)
             {
@@ -64,17 +66,14 @@ public class AIBrain : IAIBrain
                 return;
             }
 
-            _goalState = new AIGoalState(_goalState.CurrentGoal, _goalState.LockTimer - deltaTime);
-            return;
+            if (_goalState.CurrentGoal != EAIGoalType.None && !_termination.ShouldTerminate(_goalState.CurrentGoal, remainingLockTime, simulation))
+            {
+                _goalState = new AIGoalState(_goalState.CurrentGoal, remainingLockTime);
+                return;
+            }
         }
 
-        // 2. 종료 조건 검사
-        if (_termination.ShouldTerminate(_goalState.CurrentGoal, simulation))
-            _goalState = new AIGoalState(EAIGoalType.None, 0f);
-
-        // 3. 새 Goal 결정
-        EAIGoalType nextGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, _goalState.LockTimer, out float nextLockTime);
-
+        EAIGoalType nextGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, remainingLockTime, out float nextLockTime);
         _goalState = new AIGoalState(nextGoal, nextLockTime);
     }
 

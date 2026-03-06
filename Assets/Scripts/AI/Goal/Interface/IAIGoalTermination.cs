@@ -4,5 +4,5 @@
 /// </summary>
 public interface IAIGoalTermination
 {
-    bool ShouldTerminate(EAIGoalType goal, in AISimulationState simulation);
+    bool ShouldTerminate(EAIGoalType goal, float remainingLockTime, in AISimulationState simulation);
 }
