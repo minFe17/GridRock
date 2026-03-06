@@ -50,6 +50,20 @@ public class AIBrain : IAIBrain
         // 1. Lock 유지 중이면 감소
         if (_goalState.LockTimer > 0f)
         {
+            EAIGoalType emergencyGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, _goalState.LockTimer, out float emergencyLockTime);
+
+            if (emergencyGoal == EAIGoalType.KillNow && _goalState.CurrentGoal != EAIGoalType.KillNow)
+            {
+                _goalState = new AIGoalState(EAIGoalType.KillNow, emergencyLockTime);
+                return;
+            }
+
+            if (emergencyGoal == EAIGoalType.TrapPlayer && _goalState.CurrentGoal != EAIGoalType.KillNow && _goalState.CurrentGoal != EAIGoalType.TrapPlayer)
+            {
+                _goalState = new AIGoalState(EAIGoalType.TrapPlayer, emergencyLockTime);
+                return;
+            }
+
             _goalState = new AIGoalState(_goalState.CurrentGoal, _goalState.LockTimer - deltaTime);
             return;
         }
@@ -59,11 +73,9 @@ public class AIBrain : IAIBrain
             _goalState = new AIGoalState(EAIGoalType.None, 0f);
 
         // 3. 새 Goal 결정
-        EAIGoalType nextGoal = _goalDecider.DecideGoal(simulation);
+        EAIGoalType nextGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, _goalState.LockTimer, out float nextLockTime);
 
-        float lockTime = AIGoalLockTime.GetLockTime(nextGoal);
-
-        _goalState = new AIGoalState(nextGoal, lockTime);
+        _goalState = new AIGoalState(nextGoal, nextLockTime);
     }
 
     // 현재 Goal을 기반으로 Action을 선택하고 실행한다.

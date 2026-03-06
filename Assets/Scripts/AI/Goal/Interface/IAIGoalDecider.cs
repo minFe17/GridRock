@@ -3,5 +3,5 @@
 /// </summary>
 public interface IAIGoalDecider
 {
-    EAIGoalType DecideGoal(in AISimulationState simulation);
+    EAIGoalType DecideGoal(in AISimulationState simulation, EAIGoalType currentGoal, float remainingLockTime, out float nextLockTime);
 }

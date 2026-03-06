@@ -4,12 +4,12 @@
 
 public readonly struct SpatialMetrics
 {
-    public readonly int ReachableTileCount;   // 현재 위치에서 도달 가능한 타일 수
-    public readonly int AdjacentBlockCount;   // 인접한 장애물 수
-    public readonly int EscapeRouteCount;
-    public readonly bool HasEscapeRoute;
-    public readonly bool IsCornered;
-    public readonly float DangerScore;
+    public readonly int ReachableTileCount;   // 플레이어가 이동 가능한 전체 공간 크기 판단에 사용
+    public readonly int AdjacentBlockCount;   // 주변이 얼마나 막혀있는지 판단 (압박도 계산)
+    public readonly int EscapeRouteCount;     // 탈출 가능한 경로 개수 판단
+    public readonly bool HasEscapeRoute;      // 탈출 경로 존재 여부 빠른 체크
+    public readonly bool IsCornered;          // 플레이어가 코너에 몰렸는지 판단
+    public readonly float DangerScore;        // 공간 위험도 계산 결과 (AI 의사결정에 사용)
 
     public SpatialMetrics(int reachableTileCount, int adjacentBlockCount, int escapeRouteCount, bool isCornered, float dangerScore)
     {
