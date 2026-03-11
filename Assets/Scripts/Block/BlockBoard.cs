@@ -40,7 +40,7 @@ public class BlockBoard : MonoBehaviour
         Dictionary<int, int> blockTops = new Dictionary<int, int>();
         foreach (var index in data.index)
         {
-            int xIndex = (int)((position.x ) / 0.5f) + index.x ; //위치 인덱스 보정
+            int xIndex = (int)((position.x ) / 0.5f) + index.x  ; //위치 인덱스 보정
             int yIndex = 17;
             for (int y = 0; y <18; y++)
             {
