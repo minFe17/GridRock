@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Utils;
 
 /// <summary>
 /// AI의 목표/행동 의사결정을 수행하는 브레인
@@ -87,7 +86,7 @@ public class AIBrain : IAIBrain
             return;
 
         // 2. Action 선택
-        IAIActionCandidate selected = _actionSelector.Select(candidates, _goalState.CurrentGoal, simulation, triggerr, context);
+        IAIActionCandidate selected = _actionSelector.Select(candidates, _goalState.CurrentGoal, simulation, trigger, context);
 
         if (selected == null)
             return;
@@ -96,18 +95,31 @@ public class AIBrain : IAIBrain
         selected.Action.Execute(context);
 
         // 4. 결과 평가 (단순 예시)
-        bool success = EvaluateResult(simulation);
+        AISimulationState simulationAfter = _simulationService.SimulateCandidate(context, selected);
+        bool success = EvaluateResult(simulation, simulationAfter, _goalState.CurrentGoal);
 
         // 5. Learning 기록
-        _learning.Record(_goalState.CurrentGoal, simulation, success);
+        _learning.Record(_goalState.CurrentGoal, simulationAfter, success);
     }
 
     // Action 실행 결과 평가.
-    bool EvaluateResult(in AISimulationState simulation)
+    static bool EvaluateResult(in AISimulationState before, in AISimulationState after, EAIGoalType goal)
     {
-        // 실제 성공 기준 정의 필요
-        // 예: 상대 스택 증가, 위기 상태 유도 등
+        float reachableDelta = before.Score.SurvivalScore - after.Score.SurvivalScore;
+        float dangerDelta = after.Score.DangerScore - before.Score.DangerScore;
+        float escapeDelta = before.Score.EscapeScore - after.Score.EscapeScore;
 
-        return true;
+        bool reducedReachableArea = reachableDelta > 0.25f;
+        bool increasedDanger = dangerDelta > 0.10f;
+        bool reducedEscapeRoutes = escapeDelta > 0.05f;
+
+        return goal switch
+        {
+            EAIGoalType.KillNow => (increasedDanger && (reducedReachableArea || reducedEscapeRoutes)) || after.Score.SurvivalScore <= 0f,
+            EAIGoalType.TrapPlayer => reducedEscapeRoutes || after.Score.EscapeScore <= 0.05f,
+            EAIGoalType.ForceMistake => increasedDanger || (reducedReachableArea && reducedEscapeRoutes),
+            EAIGoalType.ApplyPressure => reducedReachableArea || increasedDanger || reducedEscapeRoutes,
+            _ => reducedReachableArea || increasedDanger || reducedEscapeRoutes,
+        };
     }
 }
