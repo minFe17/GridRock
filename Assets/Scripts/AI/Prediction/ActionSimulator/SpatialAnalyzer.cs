@@ -40,13 +40,10 @@ public static class SpatialAnalyzer
     {
         int routes = 0;
 
-        bool canReachLeftBoundary = start.x - leftRun <= 0;
-        bool canReachRightBoundary = start.x + rightRun >= width - 1;
-
-        if (canReachLeftBoundary)
+        if (leftRun > 0)
             routes++;
 
-        if (canReachRightBoundary)
+        if (rightRun > 0)
             routes++;
 
         return routes;
@@ -78,7 +75,7 @@ public static class SpatialAnalyzer
         float cornerPenalty = isCornered ? 1f : 0f;
 
         float weighted = (confinement * 0.45f) + (adjacencyPressure * 0.30f) + (escapePenalty * 0.15f) + (cornerPenalty * 0.10f);
-        return Mathf.Clamp01(weighted) * 10f;
+        return Mathf.Clamp01(weighted);
     }
 
     static int CountRun(bool[,] board, Vector2Int start, int width, int height, Vector2Int direction)

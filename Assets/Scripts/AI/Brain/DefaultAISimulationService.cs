@@ -14,7 +14,23 @@ public class DefaultAISimulationService : IAISimulationService
 
         bool[,] boardBefore = _context.Grid.Occupancy;
         bool[,] boardAfter = BuildBoardAfterBlockPlacement(boardBefore, predictedPosition);
+        return BuildSimulationResult(predictedPosition, boardBefore, boardAfter);
+    }
 
+    AISimulationState IAISimulationService.SimulateCandidate(in AIActionContext actionContext, in IAIActionCandidate candidate)
+    {
+        _context = SimpleSingleton<AIContextBuilder>.Instance.Build();
+
+        Vector2 predictedPosition = PredictCandidatePosition();
+
+        bool[,] boardBefore = _context.Grid.Occupancy;
+        bool[,] boardAfter = BuildBoardAfterCandidate(boardBefore, predictedPosition, candidate);
+
+        return BuildSimulationResult(predictedPosition, boardBefore, boardAfter);
+    }
+
+    AISimulationState BuildSimulationResult(Vector2 predictedPosition, bool[,] boardBefore, bool[,] boardAfter)
+    {
         SpatialMetrics spatialBefore = SpatialAnalyzer.Analyze(boardBefore, predictedPosition);
         SpatialMetrics spatialAfter = SpatialAnalyzer.Analyze(boardAfter, predictedPosition);
 
@@ -23,7 +39,6 @@ public class DefaultAISimulationService : IAISimulationService
         PredictedWorldState predictedState = new PredictedWorldState(predictedPosition, spatialBefore, spatialAfter, futureTrapRisk);
 
         OutcomeEvaluation evaluation = OutcomeEvaluator.Evaluate(predictedState);
-
         BlockState blockState = BuildBlockState();
 
         return new AISimulationState(evaluation, new AIThreat(), _context.Player, blockState);
@@ -36,30 +51,40 @@ public class DefaultAISimulationService : IAISimulationService
         return new Vector2(_context.Player.GridPosition.x, _context.Player.GridPosition.y);
     }
 
+    bool[,] BuildBoardAfterCandidate(bool[,] boardBefore, Vector2 predictedPosition, IAIActionCandidate candidate)
+    {
+        if (candidate.Action is BlockDropAction dropAction)
+            return BuildBoardAfterBlockPlacement(boardBefore, dropAction.BlockType, dropAction.Rotation, dropAction.DropCell);
+
+        return BuildBoardAfterBlockPlacement(boardBefore, predictedPosition);
+    }
+
     // 블록을 특정 위치에 배치한 이후의 보드 상태 생성
     bool[,] BuildBoardAfterBlockPlacement(bool[,] boardBefore, Vector2 predictedPosition)
     {
-        // 원본 보드 복제 (참조 공유 방지)
-        bool[,] boardAfter = (bool[,])boardBefore.Clone();
-
         // 현재 활성 블록이 없다면 변경 없이 반환
         if (!_context.ActiveBlock.HasValue)
-            return boardAfter;
+            return (bool[,])boardBefore.Clone();
 
         BlockContext block = _context.ActiveBlock.Value;
 
         // 블록 기준 위치
         Vector2Int origin = new Vector2Int((int)predictedPosition.x, (int)predictedPosition.y);
 
-        // 블록 타입 + 회전에 따른 상대 좌표 계산
-        Vector2Int[] cells = GetBlockCells(block.BlockType, block.Rotation);
+        return BuildBoardAfterBlockPlacement(boardBefore, block.BlockType, block.Rotation, origin);
+    }
+
+    bool[,] BuildBoardAfterBlockPlacement(bool[,] boardBefore, EBlockType blockType, int rotation, Vector2Int origin)
+    {
+        bool[,] boardAfter = (bool[,])boardBefore.Clone();
+        Vector2Int[] cells = GetBlockCells(blockType, rotation);
 
         int width = boardAfter.GetLength(0);
         int height = boardAfter.GetLength(1);
 
-        foreach (Vector2Int cell in cells)
+        for (int i = 0; i < cells.Length; i++)
         {
-            Vector2Int target = origin + cell;
+            Vector2Int target = origin + cells[i];
 
             // 보드 범위 벗어나면 무시
             if (target.x < 0 || target.x >= width || target.y < 0 || target.y >= height)
@@ -115,10 +140,7 @@ public class DefaultAISimulationService : IAISimulationService
 
         // 90도 단위 회전 적용
         for (int i = 0; i < baseCells.Length; i++)
-        {
-            Vector2Int c = baseCells[i];
-            rotated[i] = Rotate(c, normalizedRotation);
-        }
+            rotated[i] = Rotate(baseCells[i], normalizedRotation);
 
         return rotated;
     }

@@ -12,6 +12,11 @@ sealed class BlockDropAction : IAIAction
 
     public EAIActionTagType ActionTag { get; }
 
+    public EBlockType BlockType => _blockType;
+    public int Rotation => _rotation;
+    public Vector2Int DropCell => _dropCell;
+    public int BlockSlot => _blockSlot;
+
     public BlockDropAction(EAIActionTagType actionTag, EBlockType blockType, int rotation, Vector2Int dropCell, int blockSlot)
     {
         ActionTag = actionTag;

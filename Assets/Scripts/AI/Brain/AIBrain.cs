@@ -87,7 +87,7 @@ public class AIBrain : IAIBrain
             return;
 
         // 2. Action º±≈√
-        IAIActionCandidate selected = _actionSelector.Select(candidates, _goalState.CurrentGoal, simulation, trigger);
+        IAIActionCandidate selected = _actionSelector.Select(candidates, _goalState.CurrentGoal, simulation, triggerr, context);
 
         if (selected == null)
             return;

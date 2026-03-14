@@ -8,7 +8,7 @@ public static class OutcomeEvaluator
         EAIGoalType goal;
 
         // 즉사 가능
-        if (IsKill(state))
+        if (state.SpatialAfter.ReachableTileCount <= 1)
             goal = EAIGoalType.KillNow;
 
         // 완전 고립 가능
@@ -70,8 +70,8 @@ public static class OutcomeEvaluator
 
     static float EvaluatePressure(in PredictedWorldState state)
     {
-        float escapePenalty = state.SpatialAfter.HasEscapeRoute ? 0f : 2f;
-        return -state.SpatialAfter.ReachableTileCount + state.SpatialAfter.AdjacentBlockCount * 3f + state.ReachableDelta * 2f + escapePenalty;
+        float escapePenalty = state.SpatialAfter.EscapeRouteCount == 0 ? 2f : 0f;
+        return -state.SpatialAfter.ReachableTileCount + state.SpatialAfter.AdjacentBlockCount * 1.5f + state.ReachableDelta * 2f + escapePenalty;
     }
 
     static float EvaluateForceMistake(in PredictedWorldState state)
