@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,11 +8,13 @@ using UnityEngine;
 /// </summary>
 public class AIGoalWeightTable
 {
+    public static AIGoalWeightTable Shared { get; } = new AIGoalWeightTable();
+
     readonly Dictionary<EAIGoalType, float> _weights = new();
 
     public AIGoalWeightTable()
     {
-        foreach (EAIGoalType goal in EAIGoalType.GetValues(typeof(EAIGoalType)))
+        foreach (EAIGoalType goal in Enum.GetValues(typeof(EAIGoalType)))
             _weights[goal] = 1.0f;
     }
 
