@@ -114,10 +114,27 @@ public class AIActionSelector
 
             placementBonus += closeness * 2f;
 
-            if (goal == EAIGoalType.KillNow || goal == EAIGoalType.TrapPlayer)
+            if (goal == EAIGoalType.KillNow)
+                placementBonus += closeness * 3f;
+            else if (goal == EAIGoalType.TrapPlayer)
                 placementBonus += closeness * 2f;
 
-            if (simulationState.PlayerInfo.MoveDirection != 0)
+            if (dropAction.PredictedXs != null && dropAction.PredictedXs.Count > 0)
+            {
+                float bestFutureCloseness = 0f;
+
+                for (int i = 0; i < dropAction.PredictedXs.Count; i++)
+                {
+                    float futureDistance = Mathf.Abs(dropAction.DropCell.x - dropAction.PredictedXs[i]);
+                    float futureCloseness = 1f / (1f + futureDistance);
+                    if (futureCloseness > bestFutureCloseness)
+                        bestFutureCloseness = futureCloseness;
+                }
+
+                float futureAimMultiplier = goal == EAIGoalType.KillNow ? 1.8f : 1f;
+                placementBonus += bestFutureCloseness * futureAimMultiplier;
+            }
+            else if (simulationState.PlayerInfo.MoveDirection != 0)
             {
                 int predictedX = playerCell.x + simulationState.PlayerInfo.MoveDirection;
                 float futureDistance = Mathf.Abs(dropAction.DropCell.x - predictedX);

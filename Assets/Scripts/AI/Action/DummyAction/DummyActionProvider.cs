@@ -86,7 +86,7 @@ public class DummyActionProvider : IAIActionProvider
                 // 플레이어 예측 위치 기준 압박 비용 계산
                 float pressureCost = CalculatePressureCostMulti(goal, predictedXs, targetCell.x);
 
-                output.Add(new BlockDropActionCandidate(actionTag, pressureCost, new BlockDropAction(actionTag, blockType, rotation, targetCell, blockSlot)));
+                output.Add(new BlockDropActionCandidate(actionTag, pressureCost, new BlockDropAction(actionTag, blockType, rotation, targetCell, blockSlot, predictedXs)));
             }
         }
     }

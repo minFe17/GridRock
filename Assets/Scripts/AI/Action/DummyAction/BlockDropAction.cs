@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -9,6 +10,7 @@ sealed class BlockDropAction : IAIAction
     readonly int _rotation;
     readonly Vector2Int _dropCell;
     readonly int _blockSlot;
+    readonly IReadOnlyList<int> _predictedXs;
 
     public EAIActionTagType ActionTag { get; }
 
@@ -16,14 +18,16 @@ sealed class BlockDropAction : IAIAction
     public int Rotation => _rotation;
     public Vector2Int DropCell => _dropCell;
     public int BlockSlot => _blockSlot;
+    public IReadOnlyList<int> PredictedXs => _predictedXs;
 
-    public BlockDropAction(EAIActionTagType actionTag, EBlockType blockType, int rotation, Vector2Int dropCell, int blockSlot)
+    public BlockDropAction(EAIActionTagType actionTag, EBlockType blockType, int rotation, Vector2Int dropCell, int blockSlot, IReadOnlyList<int> predictedXs)
     {
         ActionTag = actionTag;
         _blockType = blockType;
         _rotation = rotation;
         _dropCell = dropCell;
         _blockSlot = blockSlot;
+        _predictedXs = predictedXs;
     }
 
     public bool CanExecute(in AISimulationState sim)
@@ -45,5 +49,10 @@ sealed class BlockDropAction : IAIAction
 
         BlockController block = boardManager.DropBlock;
         block.SetTarget(_dropCell, _rotation);
+
+        if (_predictedXs != null && _predictedXs.Count > 0)
+            Debug.Log($"[AI Drop] GoalTag={ActionTag}, Slot={slotNumber}, Block={_blockType}, PredictedX=[{string.Join(",", _predictedXs)}], SelectedDrop={_dropCell}");
+        else
+            Debug.Log($"[AI Drop] GoalTag={ActionTag}, Slot={slotNumber}, Block={_blockType}, PredictedX=[none], SelectedDrop={_dropCell}");
     }
 }
