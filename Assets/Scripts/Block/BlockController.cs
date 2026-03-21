@@ -1,8 +1,6 @@
-using Steamworks;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UIElements;
-using System.Collections.Generic;
 
 public class BlockController : MonoBehaviour
 {
@@ -15,14 +13,18 @@ public class BlockController : MonoBehaviour
     private bool _isDrop = false;
     private float _speed = 1f;
     private BlockBoard _board;
-    private Dictionary<int,int> _blockTops = new Dictionary<int, int> ();
+    private Dictionary<int, int> _blockTops = new Dictionary<int, int>();
     private float _preY = 0;
     private float _space = 0.5f;
-    
+    private Vector2Int _targetCell;
+    private int _targetRotation;
+
+
+    public bool IsDropping => _isDrop;
 
     public void MoveRight()
     {
-        int xIndex = (int)((transform.localPosition.x ) / 0.5f);
+        int xIndex = (int)((transform.localPosition.x) / 0.5f);
         foreach (CellIndex index in _data.index)
         {
             if (xIndex + index.x >= X_SIZE) return;
@@ -33,7 +35,7 @@ public class BlockController : MonoBehaviour
     }
     public void MoveLeft()
     {
-        int xIndex = (int)((transform.localPosition.x ) / 0.5f);
+        int xIndex = (int)((transform.localPosition.x) / 0.5f);
         foreach (CellIndex index in _data.index)
         {
             if (xIndex + index.x <= 0) return;
@@ -53,7 +55,7 @@ public class BlockController : MonoBehaviour
             CellIndex index = _data.index[i];
 
             int temp = index.x;
-            index.x = -1*index.y;
+            index.x = -1 * index.y;
             index.y = temp;
 
             _data.index[i] = index;
@@ -78,33 +80,19 @@ public class BlockController : MonoBehaviour
         _blockTops = _board.CheckBoard(_data, transform.localPosition);
     }
 
-
-    public void StartDrop()
+    public void SetTarget(Vector2Int cell, int rotation)
     {
-        if (_type == EBlockType.Z)
-            transform.localPosition = new Vector3(transform.localPosition.x + 0.5f, transform.localPosition.y);
-        _isDrop = true;
-        if(_board == null)
-            _board = transform.parent.parent.GetComponentInChildren<BlockBoard>();
-        if(_data.index == null)
-            _data = DataManager.Instance.FindBlock(_type);
-        _blockTops = _board.CheckBoard(_data, transform.localPosition);
-
-        ChangeLayer("DropBlock");
+        _targetCell = cell;
+        _targetRotation = rotation;
     }
-    public void StopDrop()
-    {
-        _isDrop = false;
 
-        ChangeLayer("Ground");
-    }
     private void Update()
     {
         if (!_isDrop) return;
         Drop();
         if (Keyboard.current.f5Key.wasPressedThisFrame)
             MoveRight();
-        else if(Keyboard.current.f4Key.wasPressedThisFrame)
+        else if (Keyboard.current.f4Key.wasPressedThisFrame)
             MoveLeft();
 
         if (Keyboard.current.f7Key.wasPressedThisFrame)
@@ -129,8 +117,8 @@ public class BlockController : MonoBehaviour
 
         foreach (var index in _data.index)
         {
-            int xIndex = (int)((transform.localPosition.x ) / 0.5f) + index.x ; //인덱스위치값보정
-            int yIndex = (int)(Mathf.Abs(_preY-2.9f)/0.5f)+index.y + 1; //블럭 보정값
+            int xIndex = (int)((transform.localPosition.x) / 0.5f) + index.x; //인덱스위치값보정
+            int yIndex = (int)(Mathf.Abs(_preY - 2.9f) / 0.5f) + index.y + 1; //블럭 보정값
             //Debug.Log(yIndex);
             if (_blockTops[xIndex] == yIndex)
             {
@@ -152,6 +140,28 @@ public class BlockController : MonoBehaviour
         gameObject.layer = layerNumber;
     }
 
+    public void StartDrop()
+    {
+        if (_type == EBlockType.Z)
+            transform.localPosition = new Vector3(transform.localPosition.x + 0.5f, transform.localPosition.y);
+        _isDrop = true;
+        if (_board == null)
+            _board = transform.parent.parent.GetComponentInChildren<BlockBoard>();
+        if (_data.index == null)
+            _data = DataManager.Instance.FindBlock(_type);
+        _blockTops = _board.CheckBoard(_data, transform.localPosition);
 
+        ChangeLayer("DropBlock");
+    }
 
+    public void StopDrop()
+    {
+        _isDrop = false;
+
+        BoardManager boardManager = BoardManager.Instance;
+        if (boardManager != null)
+            boardManager.NotifyDropFinished(this);
+
+        ChangeLayer("Ground");
+    }
 }

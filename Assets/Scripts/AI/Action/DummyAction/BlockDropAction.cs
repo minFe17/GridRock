@@ -33,6 +33,17 @@ sealed class BlockDropAction : IAIAction
 
     public void Execute(in AIActionContext context)
     {
-        Debug.Log($"[AI] Use DraftSlot:{_blockSlot} Block:{_blockType}, Rotation:{_rotation}, Cell:{_dropCell}");
+        BoardManager boardManager = BoardManager.Instance;
+        if (boardManager == null)
+            return;
+
+        int slotNumber = _blockSlot + 1;
+        bool selected = boardManager.TrySelectBlockSlot(slotNumber);
+
+        if (!selected)
+            return;
+
+        BlockController block = boardManager.DropBlock;
+        block.SetTarget(_dropCell, _rotation);
     }
 }

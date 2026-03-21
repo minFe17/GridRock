@@ -7,6 +7,8 @@ using Utils;
 /// </summary>
 public class DummyActionProvider : IAIActionProvider
 {
+    readonly AIPrediction _prediction = new AIPrediction();
+
     const int PredictLookAheadCells = 2; // 플레이어 이동 예측 거리
     const int DraftPoolSize = 3;         // AI가 고려할 블록 DraftPool 최대 개수
 
@@ -57,7 +59,7 @@ public class DummyActionProvider : IAIActionProvider
         int height = board.GetLength(1);
 
         // 플레이어 이동 예측 위치
-        int targetX = context.Player.GridPosition.x + (context.Player.MoveDirection * PredictLookAheadCells);
+        List<int> predictedXs = _prediction.PredictFutureXs(context.Player, width);
 
         int rotationCount = GetRotationCount(blockType);
 
@@ -82,7 +84,7 @@ public class DummyActionProvider : IAIActionProvider
                 Vector2Int targetCell = new Vector2Int(x, dropY);
 
                 // 플레이어 예측 위치 기준 압박 비용 계산
-                float pressureCost = CalculatePressureCost(goal, targetX, targetCell.x);
+                float pressureCost = CalculatePressureCostMulti(goal, predictedXs, targetCell.x);
 
                 output.Add(new BlockDropActionCandidate(actionTag, pressureCost, new BlockDropAction(actionTag, blockType, rotation, targetCell, blockSlot)));
             }
@@ -252,5 +254,40 @@ public class DummyActionProvider : IAIActionProvider
             default:
                 return cell;
         }
+    }
+
+    static float CalculatePressureCostMulti(EAIGoalType goal, List<int> predictedXs, int placementX)
+    {
+        float bestScore = float.MaxValue;
+
+        for (int i = 0; i < predictedXs.Count; i++)
+        {
+            float dist = Mathf.Abs(predictedXs[i] - placementX);
+            float weight = (i == 0) ? 0.5f : 1f;
+            float score = dist * weight;
+
+            if (score < bestScore)
+                bestScore = score;
+        }
+
+        float baseCost;
+
+        switch (goal)
+        {
+            case EAIGoalType.KillNow:
+                baseCost = 0.25f;
+                break;
+            case EAIGoalType.TrapPlayer:
+                baseCost = 0.5f;
+                break;
+            case EAIGoalType.ForceMistake:
+                baseCost = 0.7f;
+                break;
+            default:
+                baseCost = 0.9f;
+                break;
+        }
+
+        return baseCost + (bestScore * 0.05f);
     }
 }    
