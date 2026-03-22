@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BlockBoard : MonoBehaviour
 {
-    
+
     const int Y_SIZE = 18;
     const int X_SIZE = 13;
 
@@ -15,7 +15,7 @@ public class BlockBoard : MonoBehaviour
     private float _space = 0.5f;
     private int _maxTopIndex = 0;
     private float _preY;
-   
+
 
     public int MaxTopIndex
     {
@@ -40,11 +40,11 @@ public class BlockBoard : MonoBehaviour
         Dictionary<int, int> blockTops = new Dictionary<int, int>();
         foreach (var index in data.index)
         {
-            int xIndex = (int)((position.x ) / 0.5f) + index.x  ; //위치 인덱스 보정
+            int xIndex = (int)((position.x) / 0.5f) + index.x; //위치 인덱스 보정
             int yIndex = 17;
-            for (int y = 0; y <18; y++)
+            for (int y = 0; y < 18; y++)
             {
-                if (_board[y,xIndex]==1)
+                if (_board[y, xIndex] == 1)
                 {
                     yIndex = y;
                     break;
@@ -70,7 +70,7 @@ public class BlockBoard : MonoBehaviour
 
         _preY = position.y;
         _maxTopIndex++;
-        
+
 
         //float y = position.y;
 
@@ -89,13 +89,13 @@ public class BlockBoard : MonoBehaviour
         }
         else
         {
-            int xIndex = (int)((position.x ) / 0.5f);
+            int xIndex = (int)((position.x) / 0.5f);
             bool isHit = false;
             //데이터 기반으로 체크해주면됨.
             foreach (CellIndex index in data.index)
             {
 
-                if (_maxTopIndex + index.y+1 > 17 || _maxTopIndex + index.y<0) continue; //리턴해도되지않을까?
+                if (_maxTopIndex + index.y + 1 > 17 || _maxTopIndex + index.y < 0) continue; //리턴해도되지않을까?
                 else if (_board[_maxTopIndex + index.y + 1, xIndex] != 1) continue;
 
                 isHit = true;
@@ -113,7 +113,7 @@ public class BlockBoard : MonoBehaviour
     }//사용안함
     public void AddIndex(BlockData data, Vector3 position)
     {
-        int xIndex = (int)((position.x ) / 0.5f);
+        int xIndex = (int)((position.x) / 0.5f);
         int yIndex = (int)(Mathf.Abs(position.y - 2.9f) / 0.5f);
         // +1안하면 보드 배열이 안맞고, 하면 위에 블록이 씹힌다. 왜????
         foreach (CellIndex index in data.index)
@@ -122,8 +122,8 @@ public class BlockBoard : MonoBehaviour
             Debug.Log(index.y + yIndex);
             Debug.Log(index.x + xIndex);
 
-            if(index.y+yIndex < _maxTopIndex)
-                _maxTopIndex = index.y+yIndex;
+            if (index.y + yIndex < _maxTopIndex)
+                _maxTopIndex = index.y + yIndex;
         }
 
 
@@ -142,9 +142,21 @@ public class BlockBoard : MonoBehaviour
     private void Awake()
     {
         float length = Mathf.Abs(_endY - _topY);
-        _space = length / (Y_SIZE-1);
+        _space = length / (Y_SIZE - 1);
         _maxTopIndex = Y_SIZE;
         //이거 블록크기랑 다시 다 맞춰야될듯
     }
 
+    public bool[,] BuildOccupancyMap()
+    {
+        bool[,] occupancy = new bool[X_SIZE, Y_SIZE];
+
+        for (int y = 0; y < Y_SIZE; y++)
+        {
+            for (int x = 0; x < X_SIZE; x++)
+                occupancy[x, y] = _board[y, x] == 1;
+        }
+
+        return occupancy;
+    }
 }

@@ -7,7 +7,7 @@ using UnityEngine;
 public class AIContextBuilder
 {
     // 싱글턴
-    PlayerContext _player;
+    PlayerContext? _player;
     GridContext _grid;
     IReadOnlyList<BlockOptionContext> _availableBlocks;
     BlockContext? _activeBlock;
@@ -19,19 +19,12 @@ public class AIContextBuilder
     public BlockContext ActiveBlock { set { _activeBlock = value; } }
     public AIStateContext AIStateContext { set { _aiState = value; } }
 
-    public AIContext Build()
+    int CalculateHoleCount(PlayerContext player, int rangeX, int rangeY)
     {
-        // 임시로 1,1
-        int holeCount = CalculateHoleCount(1, 1);
-        _grid = new GridContext(_grid.Occupancy, holeCount);
-        return new AIContext(_player, _grid, _availableBlocks, _activeBlock, _aiState);
-    }
-
-    int CalculateHoleCount(int rangeX, int rangeY)
-    {
-        Vector2 playerPos = _player.GridPosition;
-        int holes = 0;
+        Vector2 playerPos = player.GridPosition;
         bool[,] board = _grid.Occupancy;
+
+        int holes = 0;
 
         int startX = Mathf.Max(0, (int)playerPos.x - rangeX);
         int endX = Mathf.Min(board.GetLength(0) - 1, (int)playerPos.x + rangeX);
@@ -48,5 +41,35 @@ public class AIContextBuilder
             }
         }
         return holes;
+    }
+
+    public AIContext Build()
+    {
+        if (!TryBuild(out AIContext context))
+            return default;
+
+        return context;
+    }
+
+    public bool TryBuild(out AIContext context)
+    {
+        context = default;
+
+        if (!_player.HasValue)
+            return false;
+
+        if (_grid.Occupancy == null)
+            return false;
+
+        if (_availableBlocks == null)
+            return false;
+
+        PlayerContext player = _player.Value;
+
+        int holeCount = CalculateHoleCount(player, 1, 1);
+        _grid = new GridContext(_grid.Occupancy, holeCount);
+
+        context = new AIContext(player, _grid, _availableBlocks, _activeBlock, _aiState);
+        return true;
     }
 }

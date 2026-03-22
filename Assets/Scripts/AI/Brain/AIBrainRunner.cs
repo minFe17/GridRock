@@ -1,4 +1,5 @@
 using UnityEngine;
+using Utils;
 
 /// <summary>
 /// Scene에서 AIBrain.Update 루프를 돌리는 최소 러너
@@ -23,7 +24,19 @@ public sealed class AIBrainRunner : MonoBehaviour
         if (!_runEveryFrame || _brain == null)
             return;
 
+        AIContextBuilder builder = SimpleSingleton<AIContextBuilder>.Instance;
+
+        if (!builder.TryBuild(out _))
+        {
+            TickIdle(Time.deltaTime); 
+            return;
+        }
+
         Tick(Time.deltaTime);
+    }
+
+    void TickIdle(float deltaTime)
+    {
     }
 
     public void Tick(float deltaTime)

@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// AI 행동 후보를 평가하고 최적의 액션을 선택하는 클래스
+/// </summary>
 public class AIActionSelector
 {
     readonly IAIFairnessFilter _fairnessFilter;
@@ -17,49 +20,16 @@ public class AIActionSelector
         _simulationService = simulationService;
     }
 
-    public IAIActionCandidate Select(IReadOnlyList<IAIActionCandidate> candidates, EAIGoalType goal, in AISimulationState simulationState, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
-    {
-        bool allowInterfere = AIInterferencePolicy.CanInterfere(goal, trigger);
-
-        IAIActionCandidate best = null;
-        float bestScore = float.MinValue;
-
-        foreach (IAIActionCandidate candidate in candidates)
-        {
-            if (!AIGoalActionPolicy.IsAllowed(goal, candidate.ActionTag))
-                continue;
-
-            if (!allowInterfere && candidate.ActionTag == EAIActionTagType.ApplyPressure)
-                continue;
-
-            if (!_fairnessFilter.CanApply(candidate))
-                continue;
-
-            AISimulationState candidateSimulation = SimulateCandidateOrFallback(candidate, actionContext, simulationState);
-
-            if (!candidate.Action.CanExecute(candidateSimulation))
-                continue;
-
-            float score = Evaluate(candidate, goal, candidateSimulation, trigger, allowInterfere);
-
-            if (score > bestScore)
-            {
-                bestScore = score;
-                best = candidate;
-            }
-        }
-
-        return best;
-    }
-
-    AISimulationState SimulateCandidateOrFallback(IAIActionCandidate candidate, in AIActionContext actionContext, in AISimulationState fallback)
+    // 후보 시뮬레이션 실행 (없으면 default 반환)
+    AISimulationState SimulateCandidate(IAIActionCandidate candidate, in AIActionContext actionContext)
     {
         if (_simulationService == null)
-            return fallback;
+            return default;
 
         return _simulationService.SimulateCandidate(actionContext, candidate);
     }
 
+    // 후보 행동 점수 평가
     static float Evaluate(IAIActionCandidate candidate, EAIGoalType goal, in AISimulationState simulationState, in AIInterferenceTriggerState trigger, bool allowInterfere)
     {
         OutcomeEvaluation eval = simulationState.Score;
@@ -76,13 +46,14 @@ public class AIActionSelector
             case EAIGoalType.ForceMistake:
                 goalScore = eval.DangerScore * 2.5f - eval.SurvivalScore;
                 break;
-            case EAIGoalType.ApplyPressure:
             default:
                 goalScore = eval.TotalScore;
                 break;
         }
 
         float actionBonus = 0f;
+
+        // 행동 타입 보너스
         if (candidate.ActionTag == EAIActionTagType.InstantKill && goal == EAIGoalType.KillNow)
             actionBonus = 5f;
         else if (candidate.ActionTag == EAIActionTagType.BlockEscape && goal == EAIGoalType.TrapPlayer)
@@ -93,12 +64,16 @@ public class AIActionSelector
             actionBonus = 2f;
 
         float triggerBonus = 0f;
+
+        // 트리거 기반 보너스
         if (allowInterfere)
         {
             if (trigger.IsNearTetris && candidate.ActionTag == EAIActionTagType.ApplyPressure)
                 triggerBonus += 1.5f;
 
-            if (trigger.IsNearLineClear && (candidate.ActionTag == EAIActionTagType.BlockEscape || candidate.ActionTag == EAIActionTagType.CreateDanger))
+            if (trigger.IsNearLineClear &&
+                (candidate.ActionTag == EAIActionTagType.BlockEscape ||
+                 candidate.ActionTag == EAIActionTagType.CreateDanger))
                 triggerBonus += 1.2f;
 
             if (trigger.IsHighStack)
@@ -106,9 +81,12 @@ public class AIActionSelector
         }
 
         float placementBonus = 0f;
+
+        // 블록 배치 기반 보너스 계산
         if (candidate.Action is BlockDropAction dropAction)
         {
             Vector2Int playerCell = simulationState.PlayerInfo.GridPosition;
+
             float distance = Mathf.Abs(dropAction.DropCell.x - playerCell.x);
             float closeness = 1f / (1f + distance);
 
@@ -119,6 +97,7 @@ public class AIActionSelector
             else if (goal == EAIGoalType.TrapPlayer)
                 placementBonus += closeness * 2f;
 
+            // 미래 위치 기반 보정
             if (dropAction.PredictedXs != null && dropAction.PredictedXs.Count > 0)
             {
                 float bestFutureCloseness = 0f;
@@ -127,12 +106,13 @@ public class AIActionSelector
                 {
                     float futureDistance = Mathf.Abs(dropAction.DropCell.x - dropAction.PredictedXs[i]);
                     float futureCloseness = 1f / (1f + futureDistance);
+
                     if (futureCloseness > bestFutureCloseness)
                         bestFutureCloseness = futureCloseness;
                 }
 
-                float futureAimMultiplier = goal == EAIGoalType.KillNow ? 1.8f : 1f;
-                placementBonus += bestFutureCloseness * futureAimMultiplier;
+                float multiplier = goal == EAIGoalType.KillNow ? 1.8f : 1f;
+                placementBonus += bestFutureCloseness * multiplier;
             }
             else if (simulationState.PlayerInfo.MoveDirection != 0)
             {
@@ -141,6 +121,53 @@ public class AIActionSelector
                 placementBonus += 1f / (1f + futureDistance);
             }
         }
+
         return goalScore + actionBonus + triggerBonus + placementBonus - candidate.PressureCost;
+    }
+
+    // 후보 리스트 중 최적 행동 선택
+    public IAIActionCandidate Select(IReadOnlyList<IAIActionCandidate> candidates, EAIGoalType goal, in AISimulationState simulationState, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
+    {
+        bool allowInterfere = AIInterferencePolicy.CanInterfere(goal, trigger);
+
+        IAIActionCandidate best = null;
+        float bestScore = float.MinValue;
+
+        foreach (IAIActionCandidate candidate in candidates)
+        {
+            // 목표에 맞는 행동인지 체크
+            if (!AIGoalActionPolicy.IsAllowed(goal, candidate.ActionTag))
+                continue;
+
+            // 간섭 허용 여부 체크
+            if (!allowInterfere && candidate.ActionTag == EAIActionTagType.ApplyPressure)
+                continue;
+
+            // 공정성 필터 체크
+            if (!_fairnessFilter.CanApply(candidate))
+                continue;
+
+            // 후보 시뮬레이션 실행
+            AISimulationState candidateSimulation = SimulateCandidate(candidate, actionContext);
+
+            // 시뮬레이션 실패 필터
+            if (candidateSimulation.Equals(default))
+                continue;
+
+            // 실행 가능 여부 체크
+            if (!candidate.Action.CanExecute(candidateSimulation))
+                continue;
+
+            // 점수 계산
+            float score = Evaluate(candidate, goal, candidateSimulation, trigger, allowInterfere);
+
+            // 최고 점수 갱신
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = candidate;
+            }
+        }
+        return best;
     }
 }

@@ -61,8 +61,7 @@ public class PlayerController : MonoBehaviour
     {
         if (_state.IsStun)
         {
-            //PlayerContext playerContext = new PlayerContext(, 0, true);               // 그리드 좌표 필요(첫번쨰 매개변수)
-            //SimpleSingleton<AIContextBuilder>.Instance.PlayerContext = playerContext;
+            PublishPlayerContext(0, true);
             return;
         }
 
@@ -80,8 +79,8 @@ public class PlayerController : MonoBehaviour
             _moveDirection = -1;
         }
 
-        //PlayerContext playerContext = new PlayerContext(, _moveDirection, true);      // 그리드 좌표 필요(첫번쨰 매개변수)
-        //SimpleSingleton<AIContextBuilder>.Instance.PlayerContext = playerContext;
+        PublishPlayerContext(_moveDirection, _state.IsStun);
+
 
         if (_isGround && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
@@ -115,4 +114,11 @@ public class PlayerController : MonoBehaviour
         _timer = 0f;
     }
 
+    private void PublishPlayerContext(int moveDirection, bool isStunned)
+    {
+        Vector3 localPos = transform.localPosition;
+        Vector2Int gridPos = new Vector2Int(Mathf.RoundToInt(localPos.x / 0.5f), Mathf.RoundToInt(localPos.y / 0.5f));
+        PlayerContext playerContext = new PlayerContext(gridPos, moveDirection, isStunned);
+        SimpleSingleton<AIContextBuilder>.Instance.PlayerContext = playerContext;
+    }
 }

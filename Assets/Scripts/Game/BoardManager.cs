@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Utils;
@@ -14,6 +15,7 @@ public class BoardManager : MonoBehaviour
 
     private BlockController _dropBlock;
     private bool _isDrop = false;
+    private BlockBoard _blockBoard;
 
 
     private Vector2 _spawnPosition = new Vector2(0, 3.9f);
@@ -37,8 +39,9 @@ public class BoardManager : MonoBehaviour
     }
     private void Start()
     {
-
         CreateBlocks();
+        _blockBoard = GetComponentInChildren<BlockBoard>();
+        UpdateGridContext();
     }
 
     private void Update()
@@ -57,6 +60,7 @@ public class BoardManager : MonoBehaviour
         {
             SelectBlock(3);
         }
+        UpdateGridContext();
     }
 
     private void CreateBlocks()
@@ -89,6 +93,16 @@ public class BoardManager : MonoBehaviour
 
         SimpleSingleton<AIContextBuilder>.Instance.AvailableBlocks = blocks;
     }
+
+    private void UpdateGridContext()
+    {
+        if (_blockBoard == null)
+            return;
+
+        bool[,] occupancy = _blockBoard.BuildOccupancyMap();
+        SimpleSingleton<AIContextBuilder>.Instance.GridContext = new GridContext(occupancy);
+    }
+
 
     public void SelectBlock(int num)
     {
@@ -128,5 +142,7 @@ public class BoardManager : MonoBehaviour
     {
         if (_dropBlock == block)
             _isDrop = false;
+
+        UpdateGridContext();
     }
 }

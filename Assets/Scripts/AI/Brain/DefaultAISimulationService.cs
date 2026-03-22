@@ -7,7 +7,8 @@ public class DefaultAISimulationService : IAISimulationService
 
     AISimulationState IAISimulationService.Simulate(in AIActionContext actionContext)
     {
-        _context = SimpleSingleton<AIContextBuilder>.Instance.Build();
+        if (!TryGetContext(out _context))
+            return default;
 
         // 플레이어의 행동 이후 위치 예측
         Vector2 predictedPosition = PredictCandidatePosition();
@@ -19,7 +20,8 @@ public class DefaultAISimulationService : IAISimulationService
 
     AISimulationState IAISimulationService.SimulateCandidate(in AIActionContext actionContext, in IAIActionCandidate candidate)
     {
-        _context = SimpleSingleton<AIContextBuilder>.Instance.Build();
+        if (!TryGetContext(out _context))
+            return default;
 
         Vector2 predictedPosition = PredictCandidatePosition();
 
@@ -197,5 +199,25 @@ public class DefaultAISimulationService : IAISimulationService
         }
         BlockContext block = blockContext.Value;
         return new BlockState(block.BlockType, pos, block.Rotation, true, pressure);
+    }
+
+    bool TryGetContext(out AIContext context)
+    {
+        AIContextBuilder builder = SimpleSingleton<AIContextBuilder>.Instance;
+
+        if (!builder.TryBuild(out context))
+        {
+#if UNITY_EDITOR
+            throw new System.Exception("AIContext Build Failed");
+#else
+            Debug.LogWarning("AIContext not ready");
+            return false;
+#endif
+        }
+
+        if (context.Grid.Occupancy == null)
+            return false;
+
+        return true;
     }
 }
