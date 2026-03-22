@@ -28,7 +28,7 @@ public class BackGround : MonoBehaviour
     }
     private void MakeBackGround()
     {
-        _poolingManager = new PoolingManager(Resources.Load<GameObject>("Prefabs/BackGroundBlock"), this.gameObject,500);
+        _poolingManager = new PoolingManager(Resources.Load<GameObject>("Prefabs/BackGround/BackGroundBlock"), this.gameObject,500);
 
         for (int y = 0; y < Y_LENGTH; y++)
         {
