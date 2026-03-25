@@ -6,7 +6,7 @@ using Utils;
 
 public class BoardManager : MonoBehaviour
 {
-    public static BoardManager Instance => Utils.MonoSingleton<BoardManager>.Instance;
+    public static BoardManager Instance { get; private set; }
 
     private Dictionary<EBlockType, PoolingManager> _blocks = new Dictionary<EBlockType, PoolingManager>();
 
@@ -32,10 +32,23 @@ public class BoardManager : MonoBehaviour
 
     public bool IsBlockDropping => _isDrop;
 
+
     private void Awake()
     {
         DataManager.Instance.LoadData();
         _blockDatas = DataManager.Instance.Data;
+
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+
+        DataManager.Instance.LoadData();
+        _blockDatas = DataManager.Instance.Data;
+
     }
     private void Start()
     {
