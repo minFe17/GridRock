@@ -5,25 +5,26 @@ using UnityEngine;
 /// </summary>
 public readonly struct GridContext
 {
-    public readonly bool[,] Occupancy;          // true = 블록 있음
+    public readonly bool[,] Occupancy;          
     public readonly int HoleCount;
 
     public readonly int MaxHeight
     {
         get
         {
-            int rows = Occupancy.GetLength(0);
-            int cols = Occupancy.GetLength(1);
+            int width = Occupancy.GetLength(0);
+            int height = Occupancy.GetLength(1);
 
-            for (int y = 0; y < rows; y++)
+            for (int y = height - 1; y >= 0; y--)
             {
-                for (int x = 0; x < cols; x++)
+                for (int x = 0; x < width; x++)
                 {
-                    if (Occupancy[y, x])
-                        return y; // 가장 위에 있는 블록 y 인덱스 반환
+                    if (Occupancy[x, y])
+                        return y+1;
                 }
             }
-            return rows; // 블록이 없는 경우
+
+            return 0;
         }
     }
 
