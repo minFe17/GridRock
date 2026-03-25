@@ -9,11 +9,12 @@ public class BlockBoard : MonoBehaviour
     const int X_SIZE = 13;
 
     private int[,] _board = new int[Y_SIZE, X_SIZE];
+    private int[] _xIndexCount = new int[Y_SIZE];
 
     private float _topY = 2.9f;
     private float _endY = -5.08f;
     private float _space = 0.5f;
-    private int _maxTopIndex = 0;
+    private int _maxTopIndex = Y_SIZE; // 낮을수록 높은 배열 인덱스 입니다. 0->최상위배열인덱스
     private float _preY;
 
 
@@ -41,8 +42,8 @@ public class BlockBoard : MonoBehaviour
         foreach (var index in data.index)
         {
             int xIndex = (int)((position.x) / 0.5f) + index.x; //위치 인덱스 보정
-            int yIndex = 17;
-            for (int y = 0; y < 18; y++)
+            int yIndex = Y_SIZE-1;
+            for (int y = 0; y < Y_SIZE; y++)
             {
                 if (_board[y, xIndex] == 1)
                 {
@@ -55,70 +56,27 @@ public class BlockBoard : MonoBehaviour
         }
         return blockTops;
     }
-    public void UpdateBoard(GameObject obj, BlockData data)
+    public bool[,] BuildOccupancyMap()
     {
-        Vector3 position = obj.transform.localPosition;
-        if (position.y > 2.9f) return;
-        if (Mathf.Abs(position.y - _preY) < _space) return;
+        bool[,] occupancy = new bool[X_SIZE, Y_SIZE];
 
-        else if (position.y == 2.9f)
+        for (int y = 0; y < Y_SIZE; y++)
         {
-            _preY = 2.9f;
-            _maxTopIndex = 0;
-            return;
+            for (int x = 0; x < X_SIZE; x++)
+                occupancy[x, y] = _board[y, x] == 1;
         }
 
-        _preY = position.y;
-        _maxTopIndex++;
-
-
-        //float y = position.y;
-
-
-        Debug.Log(_maxTopIndex);
-
-        if (_maxTopIndex == Y_SIZE - 1) //이거 그 센터 1짜리로 잡아놔서 그런가? 아근데 I는 아닌데그럼?
-        {
-            //obj.GetComponent<BlockController>().StopDrop();
-
-            Vector2 pos = new Vector2(position.x, _endY);
-            obj.transform.localPosition = pos;
-            //값 보정해줘야됨
-
-            AddIndex(data, pos);
-        }
-        else
-        {
-            int xIndex = (int)((position.x) / 0.5f);
-            bool isHit = false;
-            //데이터 기반으로 체크해주면됨.
-            foreach (CellIndex index in data.index)
-            {
-
-                if (_maxTopIndex + index.y + 1 > 17 || _maxTopIndex + index.y < 0) continue; //리턴해도되지않을까?
-                else if (_board[_maxTopIndex + index.y + 1, xIndex] != 1) continue;
-
-                isHit = true;
-            }
-
-            if (!isHit) return;
-            //obj.GetComponent<BlockController>().StopDrop();
-
-            Vector2 pos = new Vector2(position.x, (_topY - _maxTopIndex * _space));
-            obj.transform.localPosition = pos;
-
-            AddIndex(data, pos);
-        }
-        // 떨어지는거 이런식으로하지말고, x기준 아래에 y 있나없나 미리 체크하는 방식으로 변경해야될듯
-    }//사용안함
+        return occupancy;
+    }
     public void AddIndex(BlockData data, Vector3 position)
     {
         int xIndex = (int)((position.x) / 0.5f);
-        int yIndex = (int)(Mathf.Abs(position.y - 2.9f) / 0.5f);
+        int yIndex = (int)(Mathf.Abs(position.y - 2.9f) / 0.5f) + 1;
         // +1안하면 보드 배열이 안맞고, 하면 위에 블록이 씹힌다. 왜????
         foreach (CellIndex index in data.index)
-        {
+        {  
             _board[index.y + yIndex, index.x + xIndex] = 1; //연산 꼬일수도있다
+            _xIndexCount[index.y+yIndex]++;
             Debug.Log(index.y + yIndex);
             Debug.Log(index.x + xIndex);
 
@@ -126,6 +84,10 @@ public class BlockBoard : MonoBehaviour
                 _maxTopIndex = index.y + yIndex;
         }
 
+        int clearYIndex = CheckIndexes();
+
+        if (clearYIndex != -1)
+            ClearIndexX(clearYIndex);
 
         string arr = "";
         for (int i = 0; i < Y_SIZE; i++)
@@ -143,20 +105,21 @@ public class BlockBoard : MonoBehaviour
     {
         float length = Mathf.Abs(_endY - _topY);
         _space = length / (Y_SIZE - 1);
-        _maxTopIndex = Y_SIZE;
         //이거 블록크기랑 다시 다 맞춰야될듯
     }
 
-    public bool[,] BuildOccupancyMap()
+    private int CheckIndexes()
     {
-        bool[,] occupancy = new bool[X_SIZE, Y_SIZE];
-
-        for (int y = 0; y < Y_SIZE; y++)
+        for(int y=0;y< Y_SIZE;y++)
         {
-            for (int x = 0; x < X_SIZE; x++)
-                occupancy[x, y] = _board[y, x] == 1;
+            if (_xIndexCount[y] == X_SIZE)
+                return y;
         }
-
-        return occupancy;
+        return -1;
     }
+    private void ClearIndexX(int yIndex)
+    {
+        //라인에있는 블럭 확인해서 지우고 위에층 내리기 작업해야됨
+    }
+
 }
