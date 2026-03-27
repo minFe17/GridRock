@@ -119,10 +119,10 @@ public class BoardManager : MonoBehaviour
 
     public void SelectBlock(int num)
     {
-        TrySelectBlockSlot(num);
+        //TrySelectBlockSlot(num);
     }
 
-    public bool TrySelectBlockSlot(int slotNumber)
+    public bool TrySelectBlockSlot(int slotNumber, int xPos)
     {
         if (slotNumber < 1)
             return false;
@@ -136,6 +136,8 @@ public class BoardManager : MonoBehaviour
 
         BlockData selectedData = _randomBlocks[index];
         GameObject block = _blocks[selectedData.type].Pop();
+
+        _spawnPosition.x = xPos;
         block.transform.localPosition = _spawnPosition;
 
         _dropBlock = block.GetComponent<BlockController>();

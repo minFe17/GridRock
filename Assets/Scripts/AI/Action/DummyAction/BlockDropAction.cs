@@ -42,13 +42,10 @@ sealed class BlockDropAction : IAIAction
             return;
 
         int slotNumber = _blockSlot + 1;
-        bool selected = boardManager.TrySelectBlockSlot(slotNumber);
+        bool selected = boardManager.TrySelectBlockSlot(slotNumber, _dropCell.x);
 
         if (!selected)
             return;
-
-        BlockController block = boardManager.DropBlock;
-        block.SetTarget(_dropCell, _rotation);
 
         if (_predictedXs != null && _predictedXs.Count > 0)
             Debug.Log($"[AI Drop] GoalTag={ActionTag}, Slot={slotNumber}, Block={_blockType}, PredictedX=[{string.Join(",", _predictedXs)}], SelectedDrop={_dropCell}");

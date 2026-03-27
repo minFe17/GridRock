@@ -16,9 +16,6 @@ public class BlockController : MonoBehaviour
     private Dictionary<int, int> _blockTops = new Dictionary<int, int>();
     private float _preY = 0;
     private float _space = 0.5f;
-    private Vector2Int _targetCell;
-    private int _targetRotation;
-
 
     public bool IsDropping => _isDrop;
 
@@ -78,12 +75,6 @@ public class BlockController : MonoBehaviour
             _data.index[i] = index;
         }
         _blockTops = _board.CheckBoard(_data, transform.localPosition);
-    }
-
-    public void SetTarget(Vector2Int cell, int rotation)
-    {
-        _targetCell = cell;
-        _targetRotation = rotation;
     }
 
     private void Update()
