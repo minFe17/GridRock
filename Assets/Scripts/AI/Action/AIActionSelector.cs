@@ -128,38 +128,64 @@ public class AIActionSelector
     // 후보 리스트 중 최적 행동 선택
     public IAIActionCandidate Select(IReadOnlyList<IAIActionCandidate> candidates, EAIGoalType goal, in AISimulationState simulationState, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
     {
+        return SelectWithReport(candidates, goal, simulationState, trigger, actionContext, out _);
+    }
+
+    public IAIActionCandidate SelectWithReport(IReadOnlyList<IAIActionCandidate> candidates, EAIGoalType goal, in AISimulationState simulationState, in AIInterferenceTriggerState trigger, in AIActionContext actionContext, out AIActionSelectionReport report)
+    { 
         bool allowInterfere = AIInterferencePolicy.CanInterfere(goal, trigger);
 
         IAIActionCandidate best = null;
         float bestScore = float.MinValue;
 
+        int filteredCount = 0;
+        int evaluatedCount = 0;
+        List<AIActionScoreEntry> entries = new List<AIActionScoreEntry>(candidates.Count);
+
         foreach (IAIActionCandidate candidate in candidates)
         {
             // 목표에 맞는 행동인지 체크
             if (!AIGoalActionPolicy.IsAllowed(goal, candidate.ActionTag))
+            {
+                filteredCount++;
                 continue;
+            }
 
             // 간섭 허용 여부 체크
             if (!allowInterfere && candidate.ActionTag == EAIActionTagType.ApplyPressure)
+            {
+                filteredCount++;
                 continue;
+            }
 
             // 공정성 필터 체크
             if (!_fairnessFilter.CanApply(candidate))
+            {
+                filteredCount++;
                 continue;
+            }
 
             // 후보 시뮬레이션 실행
             AISimulationState candidateSimulation = SimulateCandidate(candidate, actionContext);
 
             // 시뮬레이션 실패 필터
             if (candidateSimulation.Equals(default))
+            {
+                filteredCount++;
                 continue;
+            }
 
             // 실행 가능 여부 체크
             if (!candidate.Action.CanExecute(candidateSimulation))
+            {
+                filteredCount++;
                 continue;
+            }
 
             // 점수 계산
             float score = Evaluate(candidate, goal, candidateSimulation, trigger, allowInterfere);
+            evaluatedCount++;
+            entries.Add(new AIActionScoreEntry(candidate.ActionTag, score, candidate.PressureCost));
 
             // 최고 점수 갱신
             if (score > bestScore)
@@ -168,6 +194,17 @@ public class AIActionSelector
                 best = candidate;
             }
         }
+
+        entries.Sort((a, b) => b.Score.CompareTo(a.Score));
+
+        if (best == null)
+        {
+            report = new AIActionSelectionReport(entries, evaluatedCount, filteredCount, false, EAIActionTagType.ApplyPressure, float.MinValue);
+            return null;
+        }
+
+        report = new AIActionSelectionReport(entries, evaluatedCount, filteredCount, true, best.ActionTag, bestScore);
+
         return best;
     }
 }

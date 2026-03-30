@@ -28,15 +28,19 @@ public class MockStrategyLearning : IAIStrategyLearning
     void IAIStrategyLearning.Record(EAIGoalType goal, in AISimulationState simulation, bool success)
     {
         AIStrategyRecord record = new AIStrategyRecord(goal, success, simulation.Score.TotalScore);
-
         _records.Add(record);
+
+        float beforeWeight = _goalWeights.GetWeights(goal);
 
         float delta = success ? SuccessWeightDelta : FailureWeightDelta;
         _goalWeights.Adjust(goal, delta);
 
         ApplySituationBoost(goal, simulation);
 
-        Debug.Log($"[AI Learning] Goal={goal}, Success={success}, Score={simulation.Score.TotalScore:F2}, Weight={_goalWeights.GetWeights(goal):F2}");
+        float afterWeight = _goalWeights.GetWeights(goal);
+
+        AIDebugLogger.LogLearning(_records.Count, goal, success, beforeWeight, afterWeight);
+        Debug.Log($"[AI Learning] Goal={goal}, Success={success}, Score={simulation.Score.TotalScore:F2}, Weight={beforeWeight:F2}->{afterWeight:F2}");
     }
 
     void ApplySituationBoost(EAIGoalType goal, in AISimulationState simulation)

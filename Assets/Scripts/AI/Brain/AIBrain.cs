@@ -20,6 +20,8 @@ public class AIBrain : IAIBrain
 
     readonly IAISimulationService _simulationService;
 
+    int _turnCounter;
+
     public AIBrain(IAIGoalDecider goalDecider, IAIGoalTermination termination, IAIActionProvider actionProvider, AIActionSelector actionSelector, IAIStrategyLearning learning, IAISimulationService simulationService)
     {
         _goalDecider = goalDecider;
@@ -30,6 +32,7 @@ public class AIBrain : IAIBrain
         _simulationService = simulationService;
 
         _goalState = new AIGoalState(EAIGoalType.None, 0f);
+        _turnCounter = 0;
     }
 
     // 현재 AI가 유지 중인 Goal
@@ -37,9 +40,14 @@ public class AIBrain : IAIBrain
 
     void IAIBrain.Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
     {
+        _turnCounter++;
+        AIDebugLogger.LogTurnHeader(_turnCounter);
+
         AISimulationState simulation = _simulationService.Simulate(actionContext);
 
         UpdateGoal(deltaTime, simulation);
+        AIDebugLogger.LogGoal(_turnCounter, _goalState.CurrentGoal);
+
         ExecuteAction(simulation, trigger, actionContext);
     }
 
@@ -86,7 +94,8 @@ public class AIBrain : IAIBrain
             return;
 
         // 2. Action 선택
-        IAIActionCandidate selected = _actionSelector.Select(candidates, _goalState.CurrentGoal, simulation, trigger, context);
+        IAIActionCandidate selected = _actionSelector.SelectWithReport(candidates, _goalState.CurrentGoal, simulation, trigger, context, out AIActionSelectionReport report);
+        AIDebugLogger.LogSelection(_turnCounter, report);
 
         if (selected == null)
             return;
