@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public class DefaultGoalDecider : IAIGoalDecider
 {
-    const float GoalSwitchMargin = 0.35f;
+    const float GoalSwitchMargin = 0.25f; // 점수 차이가 작으면 전환 허용
     readonly AIGoalWeightTable _goalWeights;
 
     public DefaultGoalDecider()
@@ -25,70 +25,60 @@ public class DefaultGoalDecider : IAIGoalDecider
         float escapePressure = Inverse01(simulation.Score.EscapeScore, 6f);
         float dangerPressure = Mathf.Clamp01(simulation.Score.DangerScore / 4f);
 
+        // Goal별 가중치
         float killWeight = _goalWeights.GetWeights(EAIGoalType.KillNow);
         float trapWeight = _goalWeights.GetWeights(EAIGoalType.TrapPlayer);
         float forceMistakeWeight = _goalWeights.GetWeights(EAIGoalType.ForceMistake);
         float pressureWeight = _goalWeights.GetWeights(EAIGoalType.ApplyPressure);
 
-        // 우선순위: 1) 죽일 수 있으면 KillNow
+        // 점수 계산
+        float killScore = (1.0f * dangerPressure + 0.5f * escapePressure + 0.25f * survivalPressure) * killWeight;
+        float trapScore = (0.9f * escapePressure + 0.35f * dangerPressure) * trapWeight;
+        float forceMistakeScore = (1.0f * dangerPressure + 0.8f * escapePressure) * forceMistakeWeight;
+        float pressureScore = (0.9f * survivalPressure + 0.6f * escapePressure + 0.45f * dangerPressure) * pressureWeight;
+
+        // 상황에 따른 추가 보너스
         if (CanKillNow(simulation, dangerPressure, survivalPressure, escapePressure, killWeight))
-        {
-            nextLockTime = ResolveLockTime(EAIGoalType.KillNow, dangerPressure, escapePressure, survivalPressure);
-            return EAIGoalType.KillNow;
-        }
-        if (CanTrap(simulation, dangerPressure, escapePressure, trapWeight))
-        {
-            nextLockTime = ResolveLockTime(EAIGoalType.TrapPlayer, dangerPressure, escapePressure, survivalPressure);
-            return EAIGoalType.TrapPlayer;
-        }
+            killScore += 0.3f;
+        if (CanTrap(simulation, dangerPressure, escapePressure))
+            trapScore += 0.4f;
 
-        // 3) Kill/Trap이 안되는 상황에서만 위협/실수유도(테트리스 방해/압박)
-        float forceMistakeScore = (1.00f * dangerPressure + 0.80f * escapePressure) * forceMistakeWeight;
-        float pressureScore = (0.75f * survivalPressure + 0.55f * escapePressure + 0.40f * dangerPressure) * pressureWeight;
-
-        // LockTime 반영: 기존 Goal의 Lock이 남아 있을수록 관성 보정을 주어 잦은 진동 방지
+        // Goal 유지 보너스
         if (currentGoal != EAIGoalType.None)
         {
             float baseLock = Mathf.Max(0.01f, AIGoalLockTime.GetLockTime(currentGoal));
             float lockRatio = Mathf.Clamp01(remainingLockTime / baseLock);
-            float inertiaBonus = 0.25f * lockRatio;
+            float inertiaBonus = 0.1f * lockRatio; // 너무 높으면 고착됨
 
             switch (currentGoal)
             {
-                case EAIGoalType.ForceMistake:
-                    forceMistakeScore += inertiaBonus;
-                    break;
-                case EAIGoalType.ApplyPressure:
-                    pressureScore += inertiaBonus;
-                    break;
+                case EAIGoalType.KillNow: killScore += inertiaBonus; break;
+                case EAIGoalType.TrapPlayer: trapScore += inertiaBonus; break;
+                case EAIGoalType.ForceMistake: forceMistakeScore += inertiaBonus; break;
+                case EAIGoalType.ApplyPressure: pressureScore += inertiaBonus; break;
             }
         }
 
-        EAIGoalType bestGoal = EAIGoalType.ApplyPressure;
-        float bestScore = pressureScore;
+        // Weighted Random 선택
+        float total = killScore + trapScore + forceMistakeScore + pressureScore;
+        float r = Random.value * total;
 
-        if (forceMistakeScore > bestScore)
-        {
-            bestGoal = EAIGoalType.ForceMistake;
-            bestScore = forceMistakeScore;
-        }
-
-        // 점수 차가 작으면 현재 Goal 유지 -> threshold machine 방지
-        if (currentGoal != EAIGoalType.None)
-        {
-            float currentScore = GetScore(currentGoal, forceMistakeScore, pressureScore);
-            if (bestGoal != currentGoal && bestScore - currentScore < GoalSwitchMargin)
-                bestGoal = currentGoal;
-        }
+        EAIGoalType bestGoal;
+        if (r < killScore) bestGoal = EAIGoalType.KillNow;
+        else if (r < killScore + trapScore) bestGoal = EAIGoalType.TrapPlayer;
+        else if (r < killScore + trapScore + forceMistakeScore) bestGoal = EAIGoalType.ForceMistake;
+        else bestGoal = EAIGoalType.ApplyPressure;
 
         nextLockTime = ResolveLockTime(bestGoal, dangerPressure, escapePressure, survivalPressure);
+
+        Debug.Log($"[Goal Random] Kill:{killScore:F2} Trap:{trapScore:F2} FM:{forceMistakeScore:F2} Pressure:{pressureScore:F2} → {bestGoal}");
+
         return bestGoal;
     }
 
     static float ResolveLockTime(EAIGoalType goal, float dangerPressure, float escapePressure, float survivalPressure)
     {
         float baseLockTime = AIGoalLockTime.GetLockTime(goal);
-
         return goal switch
         {
             EAIGoalType.KillNow => baseLockTime * Mathf.Lerp(0.85f, 1.20f, dangerPressure),
@@ -104,42 +94,15 @@ public class DefaultGoalDecider : IAIGoalDecider
         if (simulation.Score.SurvivalScore <= 0f)
             return true;
 
-        float dangerThreshold = Mathf.Clamp01(0.60f - WeightToThresholdOffset(killWeight, 0.12f));
-        float pressureThreshold = Mathf.Clamp01(0.70f - WeightToThresholdOffset(killWeight, 0.10f));
-        float escapeThreshold = Mathf.Clamp01(0.75f - WeightToThresholdOffset(killWeight, 0.10f));
-
-        return dangerPressure >= dangerThreshold && (survivalPressure >= pressureThreshold || escapePressure >= escapeThreshold);
+        return dangerPressure >= 0.75f && (survivalPressure >= 0.75f || escapePressure >= 0.8f);
     }
 
-    static bool CanTrap(in AISimulationState simulation, float dangerPressure, float escapePressure, float trapWeight)
+    static bool CanTrap(in AISimulationState simulation, float dangerPressure, float escapePressure)
     {
-        if (simulation.Score.EscapeScore <= 0f)
-            return true;
-
-        float hardTrapThreshold = Mathf.Clamp01(0.78f - WeightToThresholdOffset(trapWeight, 0.12f));
-        float softTrapEscapeThreshold = Mathf.Clamp01(0.65f - WeightToThresholdOffset(trapWeight, 0.10f));
-        float softTrapDangerThreshold = Mathf.Clamp01(0.45f - WeightToThresholdOffset(trapWeight, 0.08f));
-
-        return escapePressure >= hardTrapThreshold || (escapePressure >= softTrapEscapeThreshold && dangerPressure >= softTrapDangerThreshold);
+        if (simulation.Score.EscapeScore <= 0.05f) return true;
+        if (escapePressure >= 0.65f && dangerPressure >= 0.4f) return true;
+        return false;
     }
 
-    static float WeightToThresholdOffset(float weight, float factor)
-    {
-        return Mathf.Clamp(weight - 1f, -0.5f, 1.5f) * factor;
-    }
-
-    static float GetScore(EAIGoalType goal, float forceMistake, float pressure)
-    {
-        return goal switch
-        {
-            EAIGoalType.ForceMistake => forceMistake,
-            EAIGoalType.ApplyPressure => pressure,
-            _ => 0f,
-        };
-    }
-
-    static float Inverse01(float value, float max)
-    {
-        return 1f - Mathf.Clamp01(value / Mathf.Max(0.01f, max));
-    }
+    static float Inverse01(float value, float max) => 1f - Mathf.Clamp01(value / Mathf.Max(0.01f, max));
 }

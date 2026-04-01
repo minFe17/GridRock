@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEngine;
 
 /// <summary>
@@ -22,6 +24,9 @@ public class AIBrain : IAIBrain
 
     int _turnCounter;
 
+    // 현재 AI가 유지 중인 Goal
+    public EAIGoalType CurrentGoal => _goalState.CurrentGoal;
+
     public AIBrain(IAIGoalDecider goalDecider, IAIGoalTermination termination, IAIActionProvider actionProvider, AIActionSelector actionSelector, IAIStrategyLearning learning, IAISimulationService simulationService)
     {
         _goalDecider = goalDecider;
@@ -34,9 +39,6 @@ public class AIBrain : IAIBrain
         _goalState = new AIGoalState(EAIGoalType.None, 0f);
         _turnCounter = 0;
     }
-
-    // 현재 AI가 유지 중인 Goal
-    public EAIGoalType CurrentGoal => _goalState.CurrentGoal;
 
     void IAIBrain.Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
     {
@@ -54,7 +56,7 @@ public class AIBrain : IAIBrain
     // Goal 처리
     void UpdateGoal(float deltaTime, in AISimulationState simulation)
     {
-        // 1. Lock 유지 중이면 감소
+        // Lock 유지 중이면 감소
         float remainingLockTime = Mathf.Max(0f, _goalState.LockTimer - deltaTime);
 
         if (_goalState.CurrentGoal != EAIGoalType.None)
@@ -82,6 +84,8 @@ public class AIBrain : IAIBrain
 
         EAIGoalType nextGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, remainingLockTime, out float nextLockTime);
         _goalState = new AIGoalState(nextGoal, nextLockTime);
+
+        AILogCSVLogger.LogGoal(_turnCounter, nextGoal);
     }
 
     // 현재 Goal을 기반으로 Action을 선택하고 실행한다.

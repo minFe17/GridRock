@@ -11,7 +11,7 @@ public class BlockController : MonoBehaviour
     private BlockData _data;
 
     private bool _isDrop = false;
-    private float _speed = 1f;
+    private float _speed = 3f;
     private BlockBoard _board;
     private Dictionary<int, int> _blockTops = new Dictionary<int, int>();
     private float _preY = 0;

@@ -118,7 +118,7 @@ public class PlayerController : MonoBehaviour
     {
         Vector3 localPos = transform.localPosition;
         Vector2Int gridPos = new Vector2Int(Mathf.RoundToInt(localPos.x / 0.5f), Mathf.RoundToInt(localPos.y / 0.5f));
-        PlayerContext playerContext = new PlayerContext(gridPos, moveDirection, isStunned);
+        PlayerContext playerContext = new PlayerContext(gridPos, moveDirection, isStunned, MOVE_SPEED);
         SimpleSingleton<AIContextBuilder>.Instance.PlayerContext = playerContext;
     }
 }

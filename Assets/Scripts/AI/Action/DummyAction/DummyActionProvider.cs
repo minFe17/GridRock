@@ -59,7 +59,7 @@ public class DummyActionProvider : IAIActionProvider
         int height = board.GetLength(1);
 
         // 플레이어 이동 예측 위치
-        List<int> predictedXs = _prediction.PredictFutureXs(context.Player, width);
+        List<int> predictedXs = _prediction.PredictFutureXs(context.Player, context.Grid, width);
 
         int rotationCount = GetRotationCount(blockType);
 
