@@ -15,6 +15,7 @@ public sealed class AIBrainRunner : MonoBehaviour
 
     IAIBrain _brain;
     float _thinkTimer;
+    static bool _manualWeightsApplied = false;
 
     void Awake()
     {
@@ -22,6 +23,16 @@ public sealed class AIBrainRunner : MonoBehaviour
         DefaultAIFairnessFilter fairnessFilter = new DefaultAIFairnessFilter(new AIPressureBudget(_pressureBudgetMax));
 
         _brain = new AIBrain(new DefaultGoalDecider(), new DefaultGoalTermination(), new DummyActionProvider(), new AIActionSelector(fairnessFilter, simulationService), new MockStrategyLearning(), simulationService);
+
+        if (!_manualWeightsApplied)
+        {
+            _manualWeightsApplied = true;
+
+            AIGoalWeightTable.Shared.Adjust(EAIGoalType.ApplyPressure, -0.2f);
+            AIGoalWeightTable.Shared.Adjust(EAIGoalType.TrapPlayer, 0.1f);
+            AIGoalWeightTable.Shared.Adjust(EAIGoalType.KillNow, 0.1f);
+            AIGoalWeightTable.Shared.Adjust(EAIGoalType.ForceMistake, 0f);
+        }
     }
 
     void Update()
@@ -93,7 +104,6 @@ public sealed class AIBrainRunner : MonoBehaviour
                     return y;
             }
         }
-
         return -1;
     }
 

@@ -15,7 +15,12 @@ public class AIGoalWeightTable
     public AIGoalWeightTable()
     {
         foreach (EAIGoalType goal in Enum.GetValues(typeof(EAIGoalType)))
+        {
+            if (goal == EAIGoalType.None || goal == EAIGoalType.Max)
+                continue;
+
             _weights[goal] = 1.0f;
+        }
     }
 
     public float GetWeights(EAIGoalType goal) => _weights[goal];
@@ -23,5 +28,13 @@ public class AIGoalWeightTable
     public void Adjust(EAIGoalType goal, float delta)
     {
         _weights[goal] = Mathf.Clamp(_weights[goal] + delta, 0.2f, 3.0f);
+    }
+
+    public void Decay(float rate = 0.01f)
+    {
+        List<EAIGoalType> keys = new List<EAIGoalType>(_weights.Keys);
+
+        foreach (EAIGoalType key in keys)
+            _weights[key] = Mathf.Lerp(_weights[key], 1.0f, rate);
     }
 }

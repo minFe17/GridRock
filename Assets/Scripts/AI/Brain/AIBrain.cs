@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using UnityEngine;
 
 /// <summary>
@@ -43,14 +41,14 @@ public class AIBrain : IAIBrain
     void IAIBrain.Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
     {
         _turnCounter++;
-        AIDebugLogger.LogTurnHeader(_turnCounter);
 
         AISimulationState simulation = _simulationService.Simulate(actionContext);
 
         UpdateGoal(deltaTime, simulation);
-        AIDebugLogger.LogGoal(_turnCounter, _goalState.CurrentGoal);
-
         ExecuteAction(simulation, trigger, actionContext);
+
+        AIGoalWeightTable.Shared.Decay(0.02f);
+        AIActionWeightTable.Shared.Decay(0.02f);
     }
 
     // Goal 처리
@@ -61,21 +59,7 @@ public class AIBrain : IAIBrain
 
         if (_goalState.CurrentGoal != EAIGoalType.None)
         {
-            EAIGoalType emergencyGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, remainingLockTime, out float emergencyLockTime);
-
-            if (emergencyGoal == EAIGoalType.KillNow && _goalState.CurrentGoal != EAIGoalType.KillNow)
-            {
-                _goalState = new AIGoalState(EAIGoalType.KillNow, emergencyLockTime);
-                return;
-            }
-
-            if (emergencyGoal == EAIGoalType.TrapPlayer && _goalState.CurrentGoal != EAIGoalType.KillNow && _goalState.CurrentGoal != EAIGoalType.TrapPlayer)
-            {
-                _goalState = new AIGoalState(EAIGoalType.TrapPlayer, emergencyLockTime);
-                return;
-            }
-
-            if (_goalState.CurrentGoal != EAIGoalType.None && !_termination.ShouldTerminate(_goalState.CurrentGoal, remainingLockTime, simulation))
+            if (!_termination.ShouldTerminate(_goalState.CurrentGoal, remainingLockTime, simulation))
             {
                 _goalState = new AIGoalState(_goalState.CurrentGoal, remainingLockTime);
                 return;
@@ -83,56 +67,59 @@ public class AIBrain : IAIBrain
         }
 
         EAIGoalType nextGoal = _goalDecider.DecideGoal(simulation, _goalState.CurrentGoal, remainingLockTime, out float nextLockTime);
+
         _goalState = new AIGoalState(nextGoal, nextLockTime);
 
+        // CSV 로그
         AILogCSVLogger.LogGoal(_turnCounter, nextGoal);
     }
 
-    // 현재 Goal을 기반으로 Action을 선택하고 실행한다.
+    // Action 실행
     void ExecuteAction(in AISimulationState simulation, in AIInterferenceTriggerState trigger, in AIActionContext context)
     {
-        // 1. 후보 수집
-        IReadOnlyList<IAIActionCandidate> candidates = _actionProvider.GetCandidates(_goalState.CurrentGoal);
-
+        var candidates = _actionProvider.GetCandidates(_goalState.CurrentGoal);
         if (candidates == null || candidates.Count == 0)
             return;
 
-        // 2. Action 선택
-        IAIActionCandidate selected = _actionSelector.SelectWithReport(candidates, _goalState.CurrentGoal, simulation, trigger, context, out AIActionSelectionReport report);
-        AIDebugLogger.LogSelection(_turnCounter, report);
+        var selected = _actionSelector.SelectWithReport(
+            candidates, _goalState.CurrentGoal, simulation, trigger, context, out _);
 
         if (selected == null)
             return;
 
-        // 3. 실행
+        // 실행 전 상태
+        AISimulationState baseline = _simulationService.Simulate(context);
+
+        // 실행
         selected.Action.Execute(context);
 
-        // 4. 결과 평가 (단순 예시)
-        AISimulationState simulationAfter = _simulationService.SimulateCandidate(context, selected);
-        bool success = EvaluateResult(simulation, simulationAfter, _goalState.CurrentGoal);
+        // 실행 후 상태
+        AISimulationState after = _simulationService.SimulateCandidate(context, selected);
 
-        // 5. Learning 기록
-        _learning.Record(_goalState.CurrentGoal, simulationAfter, success);
-    }
+        float baseScore = AIActionSelector.EvaluateForLearning(selected, _goalState.CurrentGoal, baseline);
+        float afterScore = AIActionSelector.EvaluateForLearning(selected, _goalState.CurrentGoal, after);
 
-    // Action 실행 결과 평가.
-    static bool EvaluateResult(in AISimulationState before, in AISimulationState after, EAIGoalType goal)
-    {
-        float reachableDelta = before.Score.SurvivalScore - after.Score.SurvivalScore;
-        float dangerDelta = after.Score.DangerScore - before.Score.DangerScore;
-        float escapeDelta = before.Score.EscapeScore - after.Score.EscapeScore;
+        float delta = afterScore - baseScore;
 
-        bool reducedReachableArea = reachableDelta > 0.25f;
-        bool increasedDanger = dangerDelta > 0.10f;
-        bool reducedEscapeRoutes = escapeDelta > 0.05f;
+        // delta = Mathf.Clamp(delta, -0.1f, 0.1f);
 
-        return goal switch
-        {
-            EAIGoalType.KillNow => (increasedDanger && (reducedReachableArea || reducedEscapeRoutes)) || after.Score.SurvivalScore <= 0f,
-            EAIGoalType.TrapPlayer => reducedEscapeRoutes || after.Score.EscapeScore <= 0.05f,
-            EAIGoalType.ForceMistake => increasedDanger || (reducedReachableArea && reducedEscapeRoutes),
-            EAIGoalType.ApplyPressure => reducedReachableArea || increasedDanger || reducedEscapeRoutes,
-            _ => reducedReachableArea || increasedDanger || reducedEscapeRoutes,
-        };
+        delta *= 0.1f;
+
+        // 너무 작은 값 방지
+        if (Mathf.Abs(delta) < 0.005f)
+            delta = Random.Range(-0.02f, 0.02f);
+
+        // 반영
+        AIGoalWeightTable.Shared.Adjust(_goalState.CurrentGoal, delta);
+        AIActionWeightTable.Shared.Adjust(_goalState.CurrentGoal, selected.ActionTag, delta);
+
+        bool success = delta > 0f;
+        _learning.Record(_goalState.CurrentGoal, after, success);
+
+        Debug.Log(
+            $"[AutoTune FIX] Goal:{_goalState.CurrentGoal} Action:{selected.ActionTag} Δ:{delta:F3} " +
+            $"G:{AIGoalWeightTable.Shared.GetWeights(_goalState.CurrentGoal):F2} " +
+            $"A:{AIActionWeightTable.Shared.GetWeight(_goalState.CurrentGoal, selected.ActionTag):F2}"
+        );
     }
 }

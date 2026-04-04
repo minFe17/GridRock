@@ -52,8 +52,6 @@ public class AIActionSelector
         }
 
         float actionBonus = 0f;
-
-        // 행동 타입 보너스
         if (candidate.ActionTag == EAIActionTagType.InstantKill && goal == EAIGoalType.KillNow)
             actionBonus = 5f;
         else if (candidate.ActionTag == EAIActionTagType.BlockEscape && goal == EAIGoalType.TrapPlayer)
@@ -65,15 +63,12 @@ public class AIActionSelector
 
         float triggerBonus = 0f;
 
-        // 트리거 기반 보너스
         if (allowInterfere)
         {
             if (trigger.IsNearTetris && candidate.ActionTag == EAIActionTagType.ApplyPressure)
                 triggerBonus += 1.5f;
 
-            if (trigger.IsNearLineClear &&
-                (candidate.ActionTag == EAIActionTagType.BlockEscape ||
-                 candidate.ActionTag == EAIActionTagType.CreateDanger))
+            if (trigger.IsNearLineClear && (candidate.ActionTag == EAIActionTagType.BlockEscape || candidate.ActionTag == EAIActionTagType.CreateDanger))
                 triggerBonus += 1.2f;
 
             if (trigger.IsHighStack)
@@ -82,7 +77,6 @@ public class AIActionSelector
 
         float placementBonus = 0f;
 
-        // 블록 배치 기반 보너스 계산
         if (candidate.Action is BlockDropAction dropAction)
         {
             Vector2Int playerCell = simulationState.PlayerInfo.GridPosition;
@@ -96,33 +90,14 @@ public class AIActionSelector
                 placementBonus += closeness * 3f;
             else if (goal == EAIGoalType.TrapPlayer)
                 placementBonus += closeness * 2f;
-
-            // 미래 위치 기반 보정
-            if (dropAction.PredictedXs != null && dropAction.PredictedXs.Count > 0)
-            {
-                float bestFutureCloseness = 0f;
-
-                for (int i = 0; i < dropAction.PredictedXs.Count; i++)
-                {
-                    float futureDistance = Mathf.Abs(dropAction.DropCell.x - dropAction.PredictedXs[i]);
-                    float futureCloseness = 1f / (1f + futureDistance);
-
-                    if (futureCloseness > bestFutureCloseness)
-                        bestFutureCloseness = futureCloseness;
-                }
-
-                float multiplier = goal == EAIGoalType.KillNow ? 1.8f : 1f;
-                placementBonus += bestFutureCloseness * multiplier;
-            }
-            else if (simulationState.PlayerInfo.MoveDirection != 0)
-            {
-                int predictedX = playerCell.x + simulationState.PlayerInfo.MoveDirection;
-                float futureDistance = Mathf.Abs(dropAction.DropCell.x - predictedX);
-                placementBonus += 1f / (1f + futureDistance);
-            }
         }
 
-        return goalScore + actionBonus + triggerBonus + placementBonus - candidate.PressureCost;
+        float baseScore = goalScore + actionBonus + triggerBonus + placementBonus - candidate.PressureCost;
+
+        float goalWeight = AIGoalWeightTable.Shared.GetWeights(goal);
+        float actionWeight = AIActionWeightTable.Shared.GetWeight(goal, candidate.ActionTag);
+
+        return baseScore * goalWeight * actionWeight;
     }
 
     // 후보 리스트 중 최적 행동 선택
@@ -132,7 +107,7 @@ public class AIActionSelector
     }
 
     public IAIActionCandidate SelectWithReport(IReadOnlyList<IAIActionCandidate> candidates, EAIGoalType goal, in AISimulationState simulationState, in AIInterferenceTriggerState trigger, in AIActionContext actionContext, out AIActionSelectionReport report)
-    { 
+    {
         bool allowInterfere = AIInterferencePolicy.CanInterfere(goal, trigger);
 
         IAIActionCandidate best = null;
@@ -206,5 +181,48 @@ public class AIActionSelector
         report = new AIActionSelectionReport(entries, evaluatedCount, filteredCount, true, best.ActionTag, bestScore);
 
         return best;
+    }
+
+    public static float EvaluateForLearning(
+    IAIActionCandidate candidate,
+    EAIGoalType goal,
+    in AISimulationState state)
+    {
+        OutcomeEvaluation eval = state.Score;
+
+        float score = 0f;
+
+        switch (goal)
+        {
+            case EAIGoalType.KillNow:
+                score =
+                    eval.DangerScore * 3f
+                    - eval.EscapeScore * 2.5f
+                    - eval.SurvivalScore * 1.5f;
+                break;
+
+            case EAIGoalType.TrapPlayer:
+                score =
+                    -eval.EscapeScore * 3f
+                    + eval.DangerScore * 1.5f
+                    - eval.SurvivalScore * 1.0f;
+                break;
+
+            case EAIGoalType.ForceMistake:
+                score =
+                    eval.DangerScore * 2f
+                    - eval.SurvivalScore * 2f
+                    - eval.EscapeScore * 1.5f;
+                break;
+
+            case EAIGoalType.ApplyPressure:
+                score =
+                    eval.DangerScore * 1.2f
+                    - eval.SurvivalScore * 2.2f
+                    - eval.EscapeScore * 1.2f;
+                break;
+        }
+
+        return score;
     }
 }

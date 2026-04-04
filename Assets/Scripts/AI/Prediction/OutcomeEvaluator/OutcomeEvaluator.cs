@@ -16,25 +16,28 @@ public static class OutcomeEvaluator
             goal = EAIGoalType.TrapPlayer;
         else
         {
-            // 공간 압박 점수
             float pressureScore = EvaluatePressure(state);
-
-            // 실수 유도 점수 (선택지 축소 기반)
             float mistakeScore = EvaluateForceMistake(state);
 
             goal = pressureScore >= mistakeScore ? EAIGoalType.ApplyPressure : EAIGoalType.ForceMistake;
         }
 
-        // 세부 점수 계산
+        // 기본 점수
         float survival = state.SpatialAfter.ReachableTileCount;
         float escape = state.SpatialAfter.EscapeRouteCount;
         float danger = state.SpatialAfter.DangerScore;
         float tetris = 0f;
 
-        // Goal별 total 계산
         float reachableDelta = state.ReachableDelta;
 
         float totalScore = CalculateTotalScore(goal, survival, escape, danger, tetris, reachableDelta);
+
+        float blockImpact = 0f;
+
+        if (reachableDelta > 0)
+            blockImpact = reachableDelta * 0.5f;
+
+        totalScore += blockImpact;
 
         return new OutcomeEvaluation(goal, survival, escape, danger, tetris, totalScore);
     }
@@ -56,11 +59,6 @@ public static class OutcomeEvaluator
             default:
                 return -escape * 2f + danger * 2f + reachableDelta * 2f;
         }
-    }
-
-    static bool IsKill(in PredictedWorldState state)
-    {
-        return state.SpatialAfter.ReachableTileCount == 0;
     }
 
     static bool IsTrap(in PredictedWorldState state)

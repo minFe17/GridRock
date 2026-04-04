@@ -24,7 +24,7 @@ public class DummyActionProvider : IAIActionProvider
 
         // 각 블록에 대해 배치 가능한 후보 생성
         for (int blockSlot = 0; blockSlot < draftPool.Count; blockSlot++)
-            BuildCandidatesForBlock(goal, context, draftPool[blockSlot].BlockType, blockSlot, candidates);
+            BuildCandidatesForBlock(goal, draftPool[blockSlot].BlockType, blockSlot, candidates);
 
         return candidates;
     }
@@ -49,9 +49,12 @@ public class DummyActionProvider : IAIActionProvider
     }
 
     // 특정 블록 타입에 대해 가능한 모든 배치 후보 생성
-    void BuildCandidatesForBlock(EAIGoalType goal, in AIContext context, EBlockType blockType, int blockSlot, List<IAIActionCandidate> output)
+    void BuildCandidatesForBlock(EAIGoalType goal, EBlockType blockType, int blockSlot, List<IAIActionCandidate> output)
     {
+        AIContextBuilder builder = SimpleSingleton<AIContextBuilder>.Instance;
+        AIContext context = builder.Build();
         bool[,] board = context.Grid.Occupancy;
+
         if (board == null)
             return;
 
@@ -290,4 +293,4 @@ public class DummyActionProvider : IAIActionProvider
 
         return baseCost + (bestScore * 0.05f);
     }
-}    
+}
