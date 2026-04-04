@@ -183,10 +183,7 @@ public class AIActionSelector
         return best;
     }
 
-    public static float EvaluateForLearning(
-    IAIActionCandidate candidate,
-    EAIGoalType goal,
-    in AISimulationState state)
+    public static float EvaluateForLearning(IAIActionCandidate candidate, EAIGoalType goal, in AISimulationState state)
     {
         OutcomeEvaluation eval = state.Score;
 
@@ -195,31 +192,19 @@ public class AIActionSelector
         switch (goal)
         {
             case EAIGoalType.KillNow:
-                score =
-                    eval.DangerScore * 3f
-                    - eval.EscapeScore * 2.5f
-                    - eval.SurvivalScore * 1.5f;
+                score = eval.DangerScore * 3f - eval.EscapeScore * 2.5f - eval.SurvivalScore * 1.5f;
                 break;
 
             case EAIGoalType.TrapPlayer:
-                score =
-                    -eval.EscapeScore * 3f
-                    + eval.DangerScore * 1.5f
-                    - eval.SurvivalScore * 1.0f;
+                score = -eval.EscapeScore * 3f + eval.DangerScore * 1.5f - eval.SurvivalScore * 1.0f;
                 break;
 
             case EAIGoalType.ForceMistake:
-                score =
-                    eval.DangerScore * 2f
-                    - eval.SurvivalScore * 2f
-                    - eval.EscapeScore * 1.5f;
+                score = eval.DangerScore * 2f - eval.SurvivalScore * 2f - eval.EscapeScore * 1.5f;
                 break;
 
             case EAIGoalType.ApplyPressure:
-                score =
-                    eval.DangerScore * 1.2f
-                    - eval.SurvivalScore * 2.2f
-                    - eval.EscapeScore * 1.2f;
+                score = eval.DangerScore * 1.2f - eval.SurvivalScore * 2.2f - eval.EscapeScore * 1.2f;
                 break;
         }
 

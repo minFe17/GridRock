@@ -77,11 +77,11 @@ public class AIBrain : IAIBrain
     // Action 실행
     void ExecuteAction(in AISimulationState simulation, in AIInterferenceTriggerState trigger, in AIActionContext context)
     {
-        var candidates = _actionProvider.GetCandidates(_goalState.CurrentGoal);
+        IReadOnlyList<IAIActionCandidate> candidates = _actionProvider.GetCandidates(_goalState.CurrentGoal);
         if (candidates == null || candidates.Count == 0)
             return;
 
-        var selected = _actionSelector.SelectWithReport(
+        IAIActionCandidate selected = _actionSelector.SelectWithReport(
             candidates, _goalState.CurrentGoal, simulation, trigger, context, out _);
 
         if (selected == null)
@@ -99,15 +99,12 @@ public class AIBrain : IAIBrain
         float baseScore = AIActionSelector.EvaluateForLearning(selected, _goalState.CurrentGoal, baseline);
         float afterScore = AIActionSelector.EvaluateForLearning(selected, _goalState.CurrentGoal, after);
 
-        float delta = afterScore - baseScore;
-
-        // delta = Mathf.Clamp(delta, -0.1f, 0.1f);
-
-        delta *= 0.1f;
+        float rawDelta = afterScore - baseScore;
+        float delta = ComputeLearningDelta(baseScore, afterScore);
 
         // 너무 작은 값 방지
         if (Mathf.Abs(delta) < 0.005f)
-            delta = Random.Range(-0.02f, 0.02f);
+            delta = Random.Range(-0.01f, 0.01f);
 
         // 반영
         AIGoalWeightTable.Shared.Adjust(_goalState.CurrentGoal, delta);
@@ -116,10 +113,19 @@ public class AIBrain : IAIBrain
         bool success = delta > 0f;
         _learning.Record(_goalState.CurrentGoal, after, success);
 
-        Debug.Log(
-            $"[AutoTune FIX] Goal:{_goalState.CurrentGoal} Action:{selected.ActionTag} Δ:{delta:F3} " +
-            $"G:{AIGoalWeightTable.Shared.GetWeights(_goalState.CurrentGoal):F2} " +
-            $"A:{AIActionWeightTable.Shared.GetWeight(_goalState.CurrentGoal, selected.ActionTag):F2}"
-        );
+        Debug.Log($"[AutoTune FIX] Goal:{_goalState.CurrentGoal} Action:{selected.ActionTag} " + $"Base:{baseScore:F3} After:{afterScore:F3} Raw:{rawDelta:F3} Δ:{delta:F3} " + $"G:{AIGoalWeightTable.Shared.GetWeights(_goalState.CurrentGoal):F2} " + $"A:{AIActionWeightTable.Shared.GetWeight(_goalState.CurrentGoal, selected.ActionTag):F2}");
+    }
+
+    static float ComputeLearningDelta(float baseScore, float afterScore)
+    {
+        float rawDelta = afterScore - baseScore;
+
+        // 점수 절대값으로 정규화해 과도한 편차를 줄인다.
+        float scale = Mathf.Abs(baseScore) + Mathf.Abs(afterScore) + 1f;
+        float normalized = rawDelta / scale;
+
+        // tanh로 튀는 값을 압축하고 최종 범위를 ±0.2로 제한한다.
+        float squashed = (float)System.Math.Tanh(normalized * 2f);
+        return squashed * 0.2f;
     }
 }

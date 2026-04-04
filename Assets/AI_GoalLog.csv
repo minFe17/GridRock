@@ -1,13 +1,10 @@
 Turn,Goal
 1,TrapPlayer
 2,TrapPlayer
-3,TrapPlayer
+3,ForceMistake
 4,TrapPlayer
-5,TrapPlayer
+5,ForceMistake
 6,TrapPlayer
 7,TrapPlayer
 8,TrapPlayer
-9,ForceMistake
-10,TrapPlayer
-11,ForceMistake
-12,KillNow
+9,TrapPlayer
