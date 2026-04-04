@@ -2,9 +2,4 @@ Turn,Goal
 1,TrapPlayer
 2,TrapPlayer
 3,ForceMistake
-4,TrapPlayer
-5,ForceMistake
-6,TrapPlayer
-7,TrapPlayer
-8,TrapPlayer
-9,TrapPlayer
+4,ApplyPressure

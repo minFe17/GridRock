@@ -19,7 +19,7 @@ public class AIGoalWeightTable
             if (goal == EAIGoalType.None || goal == EAIGoalType.Max)
                 continue;
 
-            _weights[goal] = 1.0f;
+            _weights[goal] = 1f;
         }
     }
 
@@ -27,7 +27,7 @@ public class AIGoalWeightTable
 
     public void Adjust(EAIGoalType goal, float delta)
     {
-        _weights[goal] = Mathf.Clamp(_weights[goal] + delta, 0.2f, 3.0f);
+        _weights[goal] = Mathf.Clamp(_weights[goal] + delta, 0.2f, 3f);
     }
 
     public void Decay(float rate = 0.01f)
@@ -35,6 +35,24 @@ public class AIGoalWeightTable
         List<EAIGoalType> keys = new List<EAIGoalType>(_weights.Keys);
 
         foreach (EAIGoalType key in keys)
-            _weights[key] = Mathf.Lerp(_weights[key], 1.0f, rate);
+            _weights[key] = Mathf.Lerp(_weights[key], 1f, rate);
+    }
+
+    public void Normalize()
+    {
+        if (_weights.Count == 0)
+            return;
+
+        float sum = 0f;
+        foreach (float value in _weights.Values)
+            sum += value;
+
+        float avg = sum / _weights.Count;
+        if (avg <= 0f)
+            return;
+
+        List<EAIGoalType> keys = new List<EAIGoalType>(_weights.Keys);
+        foreach (EAIGoalType key in keys)
+            _weights[key] = Mathf.Clamp(_weights[key] / avg, 0.2f, 3f);
     }
 }

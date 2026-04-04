@@ -6,6 +6,8 @@ using UnityEngine;
 /// </summary>
 public class AIActionSelector
 {
+    const float ExplorationRate = 0.12f;
+
     readonly IAIFairnessFilter _fairnessFilter;
     readonly IAISimulationService _simulationService;
 
@@ -68,8 +70,7 @@ public class AIActionSelector
             if (trigger.IsNearTetris && candidate.ActionTag == EAIActionTagType.ApplyPressure)
                 triggerBonus += 1.5f;
 
-            if (trigger.IsNearLineClear && (candidate.ActionTag == EAIActionTagType.BlockEscape || candidate.ActionTag == EAIActionTagType.CreateDanger))
-                triggerBonus += 1.2f;
+            if (trigger.IsNearLineClear && (candidate.ActionTag == EAIActionTagType.BlockEscape || candidate.ActionTag == EAIActionTagType.CreateDanger)) triggerBonus += 1.2f;
 
             if (trigger.IsHighStack)
                 triggerBonus += 0.8f;
@@ -116,53 +117,47 @@ public class AIActionSelector
         int filteredCount = 0;
         int evaluatedCount = 0;
         List<AIActionScoreEntry> entries = new List<AIActionScoreEntry>(candidates.Count);
+        List<IAIActionCandidate> evaluatedCandidates = new List<IAIActionCandidate>(candidates.Count);
 
         foreach (IAIActionCandidate candidate in candidates)
         {
-            // 목표에 맞는 행동인지 체크
             if (!AIGoalActionPolicy.IsAllowed(goal, candidate.ActionTag))
             {
                 filteredCount++;
                 continue;
             }
 
-            // 간섭 허용 여부 체크
             if (!allowInterfere && candidate.ActionTag == EAIActionTagType.ApplyPressure)
             {
                 filteredCount++;
                 continue;
             }
 
-            // 공정성 필터 체크
             if (!_fairnessFilter.CanApply(candidate))
             {
                 filteredCount++;
                 continue;
             }
 
-            // 후보 시뮬레이션 실행
             AISimulationState candidateSimulation = SimulateCandidate(candidate, actionContext);
 
-            // 시뮬레이션 실패 필터
             if (candidateSimulation.Equals(default))
             {
                 filteredCount++;
                 continue;
             }
 
-            // 실행 가능 여부 체크
             if (!candidate.Action.CanExecute(candidateSimulation))
             {
                 filteredCount++;
                 continue;
             }
 
-            // 점수 계산
             float score = Evaluate(candidate, goal, candidateSimulation, trigger, allowInterfere);
             evaluatedCount++;
             entries.Add(new AIActionScoreEntry(candidate.ActionTag, score, candidate.PressureCost));
+            evaluatedCandidates.Add(candidate);
 
-            // 최고 점수 갱신
             if (score > bestScore)
             {
                 bestScore = score;
@@ -178,36 +173,33 @@ public class AIActionSelector
             return null;
         }
 
-        report = new AIActionSelectionReport(entries, evaluatedCount, filteredCount, true, best.ActionTag, bestScore);
+        if (evaluatedCandidates.Count > 1 && Random.value < ExplorationRate)
+            best = evaluatedCandidates[Random.Range(0, evaluatedCandidates.Count)];
 
+        report = new AIActionSelectionReport(entries, evaluatedCount, filteredCount, true, best.ActionTag, bestScore);
         return best;
     }
 
-    public static float EvaluateForLearning(IAIActionCandidate candidate, EAIGoalType goal, in AISimulationState state)
+    public static float EvaluateForLearning(IAIActionCandidate candidate, EAIGoalType goal, in AISimulationState simulationState)
     {
-        OutcomeEvaluation eval = state.Score;
-
-        float score = 0f;
+        OutcomeEvaluation eval = simulationState.Score;
 
         switch (goal)
         {
             case EAIGoalType.KillNow:
-                score = eval.DangerScore * 3f - eval.EscapeScore * 2.5f - eval.SurvivalScore * 1.5f;
-                break;
+                return eval.DangerScore * 3f - eval.EscapeScore * 2f - eval.SurvivalScore * 1.0f;
 
             case EAIGoalType.TrapPlayer:
-                score = -eval.EscapeScore * 3f + eval.DangerScore * 1.5f - eval.SurvivalScore * 1.0f;
-                break;
+                return -eval.EscapeScore * 3f + eval.DangerScore * 1.5f - eval.SurvivalScore * 0.5f;
 
             case EAIGoalType.ForceMistake:
-                score = eval.DangerScore * 2f - eval.SurvivalScore * 2f - eval.EscapeScore * 1.5f;
-                break;
+                return eval.DangerScore * 2f - eval.SurvivalScore * 2f - eval.EscapeScore * 1f;
 
             case EAIGoalType.ApplyPressure:
-                score = eval.DangerScore * 1.2f - eval.SurvivalScore * 2.2f - eval.EscapeScore * 1.2f;
-                break;
-        }
+                return eval.DangerScore * 1.2f - eval.SurvivalScore * 1.5f - eval.EscapeScore * 1.5f;
 
-        return score;
+            default:
+                return 0f;
+        }
     }
 }

@@ -9,7 +9,7 @@ public class AIActionWeightTable
 {
     public static AIActionWeightTable Shared { get; } = new AIActionWeightTable();
 
-    private Dictionary<(EAIGoalType, EAIActionTagType), float> _weights;
+    readonly Dictionary<(EAIGoalType, EAIActionTagType), float> _weights;
 
     public AIActionWeightTable()
     {
@@ -21,9 +21,7 @@ public class AIActionWeightTable
                 continue;
 
             foreach (EAIActionTagType tag in Enum.GetValues(typeof(EAIActionTagType)))
-            {
                 _weights[(goal, tag)] = 1f;
-            }
         }
     }
 
@@ -34,7 +32,7 @@ public class AIActionWeightTable
 
     public void Adjust(EAIGoalType goal, EAIActionTagType tag, float delta)
     {
-        (EAIGoalType goal, EAIActionTagType tag) key = (goal, tag);
+        (EAIGoalType, EAIActionTagType) key = (goal, tag);
 
         if (!_weights.ContainsKey(key))
             return;
@@ -48,5 +46,40 @@ public class AIActionWeightTable
 
         foreach ((EAIGoalType, EAIActionTagType) key in keys)
             _weights[key] = Mathf.Lerp(_weights[key], 1f, rate);
+    }
+
+    public void NormalizeByGoal()
+    {
+        foreach (EAIGoalType goal in Enum.GetValues(typeof(EAIGoalType)))
+        {
+            if (goal == EAIGoalType.None || goal == EAIGoalType.Max)
+                continue;
+
+            float sum = 0f;
+            int count = 0;
+
+            foreach (EAIActionTagType tag in Enum.GetValues(typeof(EAIActionTagType)))
+            {
+                if (_weights.TryGetValue((goal, tag), out float w))
+                {
+                    sum += w;
+                    count++;
+                }
+            }
+
+            if (count == 0)
+                continue;
+
+            float avg = sum / count;
+            if (avg <= 0f)
+                continue;
+
+            foreach (EAIActionTagType tag in Enum.GetValues(typeof(EAIActionTagType)))
+            {
+                (EAIGoalType, EAIActionTagType) key = (goal, tag);
+                if (_weights.TryGetValue(key, out float w))
+                    _weights[key] = Mathf.Clamp(w / avg, 0.2f, 3f);
+            }
+        }
     }
 }
