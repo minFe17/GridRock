@@ -1,5 +1,10 @@
 Turn,Goal
-1,TrapPlayer
-2,TrapPlayer
-3,ForceMistake
+1,ApplyPressure
 4,ApplyPressure
+5,ForceMistake
+6,ApplyPressure
+7,ForceMistake
+8,TrapPlayer
+9,TrapPlayer
+10,KillNow
+11,KillNow

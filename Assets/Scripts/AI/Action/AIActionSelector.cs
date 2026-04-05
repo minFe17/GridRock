@@ -98,7 +98,8 @@ public class AIActionSelector
         float goalWeight = AIGoalWeightTable.Shared.GetWeights(goal);
         float actionWeight = AIActionWeightTable.Shared.GetWeight(goal, candidate.ActionTag);
 
-        return baseScore * goalWeight * actionWeight;
+        float weightedScore = baseScore + (goalWeight - 1f) * 2.0f + (actionWeight - 1f) * 2.0f;
+        return weightedScore;
     }
 
     // 후보 리스트 중 최적 행동 선택
@@ -187,16 +188,16 @@ public class AIActionSelector
         switch (goal)
         {
             case EAIGoalType.KillNow:
-                return eval.DangerScore * 3f - eval.EscapeScore * 2f - eval.SurvivalScore * 1.0f;
+                return eval.DangerScore * 2.5f - eval.EscapeScore * 2.5f - eval.SurvivalScore * 1.5f;
 
             case EAIGoalType.TrapPlayer:
-                return -eval.EscapeScore * 3f + eval.DangerScore * 1.5f - eval.SurvivalScore * 0.5f;
+                return eval.DangerScore * 1.5f - eval.EscapeScore * 3.0f - eval.SurvivalScore * 1.0f;
 
             case EAIGoalType.ForceMistake:
-                return eval.DangerScore * 2f - eval.SurvivalScore * 2f - eval.EscapeScore * 1f;
+                return eval.DangerScore * 2.0f - eval.SurvivalScore * 2.5f - eval.EscapeScore * 1.5f;
 
             case EAIGoalType.ApplyPressure:
-                return eval.DangerScore * 1.2f - eval.SurvivalScore * 1.5f - eval.EscapeScore * 1.5f;
+                return eval.DangerScore * 0.8f - eval.SurvivalScore * 2.0f - eval.EscapeScore * 2.5f;
 
             default:
                 return 0f;

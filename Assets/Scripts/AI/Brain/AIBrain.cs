@@ -23,7 +23,7 @@ public class AIBrain : IAIBrain
     int _turnCounter;
     EAIActionTagType _lastActionTag;
     int _sameActionStreak;
-
+    float _deltaBiasEma;
 
     // 현재 AI가 유지 중인 Goal
     public EAIGoalType CurrentGoal => _goalState.CurrentGoal;
@@ -41,6 +41,7 @@ public class AIBrain : IAIBrain
         _turnCounter = 0;
         _lastActionTag = EAIActionTagType.ApplyPressure;
         _sameActionStreak = 0;
+        _deltaBiasEma = 0f;
     }
 
     void IAIBrain.Update(float deltaTime, in AIInterferenceTriggerState trigger, in AIActionContext actionContext)
@@ -85,11 +86,11 @@ public class AIBrain : IAIBrain
     // Action 실행
     void ExecuteAction(in AISimulationState simulation, in AIInterferenceTriggerState trigger, in AIActionContext context)
     {
-        IReadOnlyList<IAIActionCandidate> candidates = _actionProvider.GetCandidates(_goalState.CurrentGoal);
+        var candidates = _actionProvider.GetCandidates(_goalState.CurrentGoal);
         if (candidates == null || candidates.Count == 0)
             return;
 
-        IAIActionCandidate selected = _actionSelector.SelectWithReport(
+        var selected = _actionSelector.SelectWithReport(
             candidates, _goalState.CurrentGoal, simulation, trigger, context, out _);
 
         if (selected == null)
@@ -103,29 +104,39 @@ public class AIBrain : IAIBrain
 
         float baseScore = AIActionSelector.EvaluateForLearning(selected, _goalState.CurrentGoal, baseline);
         float afterScore = AIActionSelector.EvaluateForLearning(selected, _goalState.CurrentGoal, after);
-        float referenceScore = ComputeAlternativeReference(candidates, selected, _goalState.CurrentGoal, context);
+
+        float referenceScore = ComputeAlternativeReference(candidates, selected, _goalState.CurrentGoal, context, baseScore);
 
         float delta = ComputeLearningDelta(baseScore, afterScore, referenceScore);
 
-        if (Mathf.Abs(delta) < 0.005f)
-            delta = Random.Range(-0.01f, 0.01f);
+        float diff = afterScore - baseScore;
+
+        if (Mathf.Abs(diff) < 0.01f)
+            delta -= 0.01f * Random.Range(0.5f, 1.5f);
 
         UpdateActionStreak(selected.ActionTag);
 
-        // 반복 행동 억제: 같은 액션이 3회 이상 반복되면 추가 패널티
         if (_sameActionStreak >= 3)
-            delta -= 0.01f * (_sameActionStreak - 2);
+            delta -= 0.015f * (_sameActionStreak - 2);
+
+        if (_goalState.CurrentGoal == EAIGoalType.ApplyPressure && _sameActionStreak >= 4)
+            delta -= 0.01f * (_sameActionStreak - 3);
+
+        if (Mathf.Abs(delta) < 0.002f)
+            delta = 0f;
+
+        delta = Mathf.Clamp(delta, -0.2f, 0.2f);
 
         AIGoalWeightTable.Shared.Adjust(_goalState.CurrentGoal, delta);
         AIActionWeightTable.Shared.Adjust(_goalState.CurrentGoal, selected.ActionTag, delta);
 
-        bool success = delta > 0f;
+        bool success = afterScore > Mathf.Max(baseScore, referenceScore);
         _learning.Record(_goalState.CurrentGoal, after, success);
 
         Debug.Log($"[AutoTune FIX] Goal:{_goalState.CurrentGoal} Action:{selected.ActionTag} " + $"Base:{baseScore:F3} After:{afterScore:F3} Ref:{referenceScore:F3} Δ:{delta:F3} Streak:{_sameActionStreak} " + $"G:{AIGoalWeightTable.Shared.GetWeights(_goalState.CurrentGoal):F2} " + $"A:{AIActionWeightTable.Shared.GetWeight(_goalState.CurrentGoal, selected.ActionTag):F2}");
     }
 
-    float ComputeAlternativeReference(IReadOnlyList<IAIActionCandidate> candidates, IAIActionCandidate selected, EAIGoalType goal, in AIActionContext context)
+    float ComputeAlternativeReference(IReadOnlyList<IAIActionCandidate> candidates, IAIActionCandidate selected, EAIGoalType goal, in AIActionContext context, float fallbackScore)
     {
         float sum = 0f;
         int count = 0;
@@ -143,7 +154,7 @@ public class AIBrain : IAIBrain
             count++;
         }
 
-        return count > 0 ? sum / count : 0f;
+        return count > 0 ? sum / count : fallbackScore;
     }
 
     void UpdateActionStreak(EAIActionTagType actionTag)
@@ -159,14 +170,16 @@ public class AIBrain : IAIBrain
 
     static float ComputeLearningDelta(float baseScore, float afterScore, float referenceScore)
     {
-        float improvement = afterScore - baseScore;
-        float advantage = afterScore - referenceScore;
-        float blended = (improvement * 0.55f) + (advantage * 0.45f);
+        float baseline = Mathf.Lerp(baseScore, referenceScore, 0.5f);
+        float raw = afterScore - baseline;
+        float normalized = raw / (Mathf.Abs(baseline) + 1f);
 
-        float scale = Mathf.Abs(baseScore) + Mathf.Abs(afterScore) + Mathf.Abs(referenceScore) + 1f;
-        float normalized = blended / scale;
+        float squashed = (float)System.Math.Tanh(normalized * 2.0f);
+        float delta = squashed * 0.15f;
 
-        float squashed = (float)System.Math.Tanh(normalized * 2f);
-        return squashed * 0.2f;
+        if (Mathf.Abs(delta) < 0.005f)
+            delta = Mathf.Sign(raw) * 0.01f;
+
+        return delta;
     }
 }

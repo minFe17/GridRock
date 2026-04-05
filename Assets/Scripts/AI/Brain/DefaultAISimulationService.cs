@@ -13,13 +13,11 @@ public class DefaultAISimulationService : IAISimulationService
         if (!TryGetContext(out _context))
             return default;
 
-        // 플레이어의 행동 이후 위치 예측
-        Vector2 predictedPosition = PredictCandidatePosition();
+        bool[,] board = _context.Grid.Occupancy;
 
-        bool[,] boardBefore = _context.Grid.Occupancy;
-        bool[,] boardAfter = (bool[,])boardBefore.Clone();
+        Vector2 predictedPosition = PredictCandidatePosition(board);
 
-        return BuildSimulationResult(predictedPosition, boardBefore, boardAfter, null);
+        return BuildSimulationResult(predictedPosition, board, (bool[,])board.Clone(), null);
     }
 
     AISimulationState IAISimulationService.SimulateCandidate(in AIActionContext actionContext, in IAIActionCandidate candidate)
@@ -30,17 +28,7 @@ public class DefaultAISimulationService : IAISimulationService
         bool[,] boardBefore = _context.Grid.Occupancy;
         bool[,] boardAfter = BuildBoardAfterCandidate(boardBefore, _context.Player.GridPosition, candidate);
 
-        Vector2 predictedPosition = PredictCandidatePosition();
-
-        if (candidate.Action is BlockDropAction dropAction)
-        {
-            Vector2 dir = predictedPosition - (Vector2)_context.Player.GridPosition;
-            predictedPosition += dir.normalized * 0.5f;
-        }
-
-        int occupiedBefore = CountOccupied(boardBefore);
-        int occupiedAfter = CountOccupied(boardAfter);
-        Debug.Log($"[SimulateCandidate] Before: {occupiedBefore}, After: {occupiedAfter}");
+        Vector2 predictedPosition = PredictCandidatePosition(boardAfter);
 
         return BuildSimulationResult(predictedPosition, boardBefore, boardAfter, candidate);
     }
@@ -74,37 +62,39 @@ public class DefaultAISimulationService : IAISimulationService
     }
 
     // 플레이어 위치 예측 (AI 목표: 방해 / 공격)
-    private Vector2 PredictCandidatePosition()
+    private Vector2 PredictCandidatePosition(bool[,] board)
     {
-        Vector2 current = _context.Player.GridPosition;
+        Vector2Int current = _context.Player.GridPosition;
 
-        // 현재 주변 8방향 중 점유수 가장 높은 쪽으로 이동 (방해 목적)
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right, new Vector2Int(1, 1), new Vector2Int(-1, 1), new Vector2Int(1, -1), new Vector2Int(-1, -1) };
+        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
-        Vector2Int bestDirection = Vector2Int.zero;
-        int maxOccupied = -1;
+        Vector2 bestPos = current;
+        float bestScore = float.MinValue;
 
         foreach (Vector2Int direction in directions)
         {
-            Vector2Int check = new Vector2Int((int)current.x + direction.x, (int)current.y + direction.y);
-            if (_context.Grid.IsInBounds(check))
+            Vector2Int next = current + direction;
+
+            if (!_context.Grid.IsInBounds(next))
+                continue;
+
+            if (board[next.x, next.y])
+                continue;
+
+            SpatialMetrics spatial = SpatialAnalyzer.Analyze(board, next);
+
+            float score = -spatial.DangerScore * 3.0f + spatial.EscapeRouteCount * 2.0f + spatial.ReachableTileCount * 0.5f;
+
+            score += Random.Range(-0.2f, 0.2f);
+
+            if (score > bestScore)
             {
-                int occupied = CountAdjacentBlocks(check);
-                if (occupied > maxOccupied)
-                {
-                    maxOccupied = occupied;
-                    bestDirection = direction;
-                }
+                bestScore = score;
+                bestPos = next;
             }
         }
 
-        Vector2 predicted = current + (Vector2)bestDirection;
-
-        // 그리드 범위 clamp
-        predicted.x = Mathf.Clamp(predicted.x, 0, _context.Grid.Occupancy.GetLength(0) - 1);
-        predicted.y = Mathf.Clamp(predicted.y, 0, _context.Grid.Occupancy.GetLength(1) - 1);
-
-        return predicted;
+        return bestPos;
     }
 
     private int CountAdjacentBlocks(Vector2Int pos)
@@ -114,7 +104,7 @@ public class DefaultAISimulationService : IAISimulationService
         {
             for (int dy = -1; dy <= 1; dy++)
             {
-                if (dx == 0 && dy == 0) 
+                if (dx == 0 && dy == 0)
                     continue;
                 Vector2 check = new Vector2(pos.x + dx, pos.y + dy);
                 if (_context.Grid.IsOccupied(check))
@@ -254,13 +244,13 @@ public class DefaultAISimulationService : IAISimulationService
     {
         switch (rotation)
         {
-            case 1: 
+            case 1:
                 return new Vector2Int(p.y, -p.x);
-            case 2: 
+            case 2:
                 return new Vector2Int(-p.x, -p.y);
-            case 3: 
+            case 3:
                 return new Vector2Int(-p.y, p.x);
-            default: 
+            default:
                 return p;
         }
     }
